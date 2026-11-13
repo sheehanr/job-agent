@@ -102,12 +102,16 @@ def store(conn, cfg, found, log):
 
         tracked.add(source_id)
 
-    # Simplify listings that are gone or closed.
-    if "simplify" in found:
-        closed = [p["source_key"] for p in found["simplify"] if not p.get("active", True)]
-        if closed:
-            conn.execute("update postings set active = false where source_key = any(%s)",
-                         (closed,))
+    # Postings a source no longer lists (or lists as closed) are closed.
+    for source_id, postings in found.items():
+        open_keys = [p["source_key"] for p in postings if p.get("active", True)]
+        if source_id == "simplify":
+            where, args = "source = 'simplify'", ()
+        else:
+            where, args = "source <> 'simplify' and source <> 'legacy' and company = %s", (
+                cfg.display_name(source_id.split(":", 1)[1]),)
+        conn.execute(f"update postings set active = false where {where} and active "
+                     f"and not (source_key = any(%s))", (*args, open_keys))
 
     db.set_meta(conn, "tracked_sources", sorted(tracked))
     log(f"New postings stored: {len(new_ids)}")
@@ -118,7 +122,8 @@ def store(conn, cfg, found, log):
 def _company_tiers(conn, judge, names, log):
 
     cache = db.get_meta(conn, "company_tiers", {}) or {}
-    missing = sorted({n for n in names if n not in cache})
+    known = {simplify.normalize(k) for k in cache}
+    missing = sorted({n for n in names if simplify.normalize(n) not in known})
 
     if missing:
         log(f"Rating {len(missing)} companies for top-tier-only terms")
@@ -178,8 +183,9 @@ def screen(conn, cfg, judge, log):
 
     if tier_check:
         tiers = _company_tiers(conn, judge, [p["company"] for p in tier_check], log)
+        tiers = {simplify.normalize(k): v for k, v in tiers.items()}
         for p in tier_check:
-            if tiers.get(p["company"]) == "top":
+            if tiers.get(simplify.normalize(p["company"])) == "top":
                 to_judge.append(p)
             else:
                 db.update(conn, p["id"], status="skipped",
