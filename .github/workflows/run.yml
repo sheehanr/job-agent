@@ -1,0 +1,40 @@
+name: Run tracker
+
+# Started every 30 minutes by a Supabase scheduled job (see
+# scripts/setup_scheduler.py) - GitHub's own schedule is unreliable and
+# often runs hours late. The schedule below is only a backup.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 */3 * * *"
+
+concurrency:
+  group: tracker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      FEEDBACK_SECRET: ${{ secrets.FEEDBACK_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - run: python -m pytest -q
+
+      - run: python -m tracker

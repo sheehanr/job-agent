@@ -1,0 +1,40 @@
+# Job Agent settings. Everything personal lives in this config/ folder.
+
+# Terms you're applying for. Postings for these terms (or co-ops, or
+# postings with no term listed) go to the AI filter at the normal bar.
+target_terms:
+  - Fall 2027
+
+# Terms that only alert for top-tier companies (better pay or resume name
+# than your current offer). Leave empty to ignore these terms entirely.
+top_tier_only_terms:
+  - Summer 2027
+
+# Treat postings with no term listed as possibly in range.
+include_unspecified_terms: true
+
+# Co-ops alert even when their term isn't listed, as long as it isn't a
+# term you've ruled out above.
+include_coops: true
+
+# Simplify categories worth sending to the AI. "Hardware" postings only
+# pass when the title looks like embedded/firmware/robotics/software work.
+simplify_categories: [Software, AI/ML/Data, Hardware]
+
+# Which AI judges postings (Gemini on Google Cloud Vertex AI).
+ai:
+  provider: gemini-vertex
+  model: gemini-3.8-flash
+  thinking: low          # gemini only: minimal | low | medium | high
+  location: global       # Vertex AI region
+
+# Notifications. Off = "shadow mode": everything is checked and saved to
+# the dashboard, but nothing is pushed to your phone.
+notifications:
+  enabled: false
+  verdicts: [alert]      # add "maybe" to also get borderline matches
+  dashboard_url: https://sheehan-job-agent.vercel.app
+
+# Don't alert twice for the same role at the same company within this
+# many days, whichever source finds it.
+dedupe_days: 21

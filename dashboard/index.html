@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Job Agent</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232457d6'/%3E%3Cpath d='M9 12h14v11a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2zM13 12V9.5A1.5 1.5 0 0 1 14.5 8h3A1.5 1.5 0 0 1 19 9.5V12' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --text: #16181d; --muted: #5d6470; --faint: #8a909b;
+  --line: #e3e6eb; --accent: #2457d6; --accent-soft: #e8eefc; --good: #137a43; --good-soft: #e3f4ea;
+  --warn: #9a5b00; --warn-soft: #fdf1dc; --bad: #b4232c; --bad-soft: #fbe7e8; --chip: #eef0f3;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .05);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1115; --panel: #171a20; --text: #e8eaee; --muted: #a2a8b3; --faint: #737a86;
+    --line: #2a2f38; --accent: #7aa2ff; --accent-soft: #1c2740; --good: #5fd18e; --good-soft: #173225;
+    --warn: #f0b45a; --warn-soft: #33270f; --bad: #ff7a83; --bad-soft: #3a1a1d; --chip: #232832;
+    --shadow: none; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button, input, select { font: inherit; color: inherit; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 20px 16px 64px; }
+header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+header h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+header .meta { color: var(--muted); font-size: 13px; margin-left: auto; text-align: right; }
+.linkbtn { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0; font-size: 13px; }
+.linkbtn:hover { color: var(--text); }
+nav.tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line);
+  margin-bottom: 14px; scrollbar-width: none; }
+nav.tabs button { background: none; border: 0; padding: 9px 12px; cursor: pointer; color: var(--muted);
+  border-bottom: 2px solid transparent; white-space: nowrap; font-weight: 500; }
+nav.tabs button.on { color: var(--text); border-bottom-color: var(--accent); }
+nav.tabs .n { color: var(--faint); font-weight: 400; margin-left: 4px; font-size: 13px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.toolbar input[type=search] { flex: 1 1 220px; min-width: 0; }
+.toolbar input, .toolbar select { background: var(--panel); border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 10px; }
+.empty { color: var(--muted); text-align: center; padding: 48px 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+.card.closed { opacity: .6; }
+.top { display: flex; gap: 10px; align-items: flex-start; }
+.titles { flex: 1; min-width: 0; }
+.company { font-size: 13px; color: var(--muted); font-weight: 600; }
+.title { font-size: 16px; font-weight: 600; margin-top: 1px; overflow-wrap: anywhere; }
+.title a { color: var(--text); }
+.badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.badge { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--chip);
+  color: var(--muted); white-space: nowrap; font-weight: 500; }
+.badge.top { background: var(--good-soft); color: var(--good); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge.bad { background: var(--bad-soft); color: var(--bad); }
+.facts { color: var(--muted); font-size: 13px; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.reason { margin-top: 8px; font-size: 14px; }
+.reason.muted { color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 6px 12px;
+  cursor: pointer; font-size: 14px; font-weight: 500; }
+.btn:hover { border-color: var(--faint); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.05); }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.fb { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; width: 100%; }
+.fb input { flex: 1 1 200px; min-width: 0; border: 1px solid var(--line); background: var(--bg);
+  border-radius: 8px; padding: 6px 10px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--panel); padding: 6px 10px; cursor: pointer; font-size: 13px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.note { font-size: 13px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; overflow: hidden; font-size: 14px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
+h2 { font-size: 15px; margin: 22px 0 8px; }
+.scroll { overflow-x: auto; }
+.login { max-width: 340px; margin: 18vh auto 0; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px; padding: 24px; }
+.login h1 { font-size: 20px; margin: 0 0 14px; }
+.login input { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 8px;
+  padding: 9px 11px; margin-bottom: 10px; }
+.login .btn { width: 100%; padding: 9px; }
+.err { color: var(--bad); font-size: 13px; min-height: 18px; }
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--text);
+  color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .2s;
+  pointer-events: none; }
+.toast.show { opacity: 1; pointer-events: auto; }
+.toast button { background: none; border: 0; color: inherit; text-decoration: underline; cursor: pointer; margin-left: 8px; }
+@media (max-width: 560px) {
+  .top { flex-direction: column; }
+  .badges { justify-content: flex-start; }
+  header .meta { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const TABS = [
+  ["matches", "Matches"], ["maybe", "Maybe"], ["applied", "Applied"],
+  ["not_fit", "Not a fit"], ["skipped", "Skipped by AI"], ["coverage", "Coverage"],
+];
+const TIER_RANK = { top: 0, strong: 1, standard: 2 };
+const params = new URLSearchParams(location.search);
+const state = {
+  tab: params.get("tab") || "matches",
+  q: params.get("company") || "",
+  term: "", source: "", sort: "best", newOnly: false,
+  rows: {}, counts: {}, status: null, open: null,
+};
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, {
+    ...opts,
+    headers: { "Content-Type": "application/json" },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if (r.status === 401) { renderLogin(); throw new Error("signed out"); }
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+
+function toast(msg, undo) {
+  const t = $("#toast");
+  t.innerHTML = esc(msg) + (undo ? ' <button id="undo">Undo</button>' : "");
+  t.classList.add("show");
+  if (undo) $("#undo").onclick = () => { t.classList.remove("show"); undo(); };
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove("show"), 5000);
+}
+
+function ago(iso) {
+  if (!iso) return "";
+  const s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 3600) return `${Math.max(1, Math.round(s / 60))}m ago`;
+  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+  return `${Math.round(s / 86400)}d ago`;
+}
+
+function termOf(r) {
+  const j = r.judgment || {};
+  const t = j.term && !/unspecified|unknown/i.test(j.term) ? j.term : (r.terms || []).filter((x) => x && x !== "N/A").join(", ");
+  return t || "Term not listed";
+}
+
+function renderLogin() {
+  $("#app").innerHTML = `
+    <form class="login" id="login">
+      <h1>Job Agent</h1>
+      <input type="password" id="pw" placeholder="Password" autocomplete="current-password" autofocus>
+      <div class="err" id="err"></div>
+      <button class="btn primary">Sign in</button>
+    </form>`;
+  $("#login").onsubmit = async (e) => {
+    e.preventDefault();
+    const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: $("#pw").value }) });
+    if (r.ok) start(); else $("#err").textContent = "Wrong password";
+  };
+}
+
+function shell() {
+  const last = state.status?.runs?.find((r) => r.finished_at);
+  $("#app").innerHTML = `
+    <header>
+      <h1>Job Agent</h1>
+      <div class="meta">${last ? `Last checked ${ago(last.finished_at)}` : ""}<br>
+        <button class="linkbtn" id="signout">Sign out</button></div>
+    </header>
+    <nav class="tabs">${TABS.map(([k, label]) =>
+      `<button data-tab="${k}" class="${k === state.tab ? "on" : ""}">${label}${
+        state.counts[k] != null ? `<span class="n">${state.counts[k]}</span>` : ""}</button>`).join("")}</nav>
+    <div id="body"></div>`;
+  document.querySelectorAll("nav.tabs button").forEach((b) => (b.onclick = () => switchTab(b.dataset.tab)));
+  $("#signout").onclick = async () => { await fetch("/api/login", { method: "DELETE" }); renderLogin(); };
+}
+
+async function switchTab(tab) {
+  state.tab = tab; state.open = null;
+  history.replaceState(null, "", tab === "matches" ? location.pathname : `?tab=${tab}`);
+  shell();
+  if (tab === "coverage") return renderCoverage();
+  if (!state.rows[tab]) await load(tab);
+  renderList();
+}
+
+async function load(tab) {
+  $("#body").innerHTML = `<div class="empty">Loading...</div>`;
+  const data = await api(`/api/postings?view=${tab}`);
+  state.rows[tab] = data.rows;
+  state.counts[tab] = data.rows.length;
+  shell();
+}
+
+function filtered() {
+  let rows = state.rows[state.tab] || [];
+  const q = state.q.trim().toLowerCase();
+  if (q) rows = rows.filter((r) => `${r.company} ${r.title} ${(r.locations || []).join(" ")} ${r.judgment?.reason || ""}`.toLowerCase().includes(q));
+  if (state.term) rows = rows.filter((r) => state.term === "none" ? termOf(r) === "Term not listed" : termOf(r).includes(state.term));
+  if (state.source) rows = rows.filter((r) => state.source === "simplify" ? r.source === "simplify" : r.source !== "simplify");
+  if (state.newOnly) rows = rows.filter((r) => !r.baseline);
+  rows = [...rows];
+  if (state.sort === "best") rows.sort((a, b) => (TIER_RANK[a.tier] ?? 3) - (TIER_RANK[b.tier] ?? 3) || new Date(b.first_seen) - new Date(a.first_seen));
+  else rows.sort((a, b) => new Date(b.first_seen) - new Date(a.first_seen));
+  return rows;
+}
+
+function card(r) {
+  const j = r.judgment || {};
+  const tier = r.tier ? `<span class="badge ${r.tier === "top" ? "top" : ""}">${r.tier === "top" ? "Top tier" : r.tier === "strong" ? "Strong" : "Standard"}</span>` : "";
+  const badges = [tier,
+    r.description_status === "unavailable" ? `<span class="badge warn" title="Couldn't read the description; judged from the title">Unverified</span>` : "",
+    !r.active ? `<span class="badge bad">Closed</span>` : "",
+    r.baseline ? "" : `<span class="badge">New</span>`].join("");
+  const locs = (r.locations || []).filter(Boolean);
+  const facts = [
+    locs.length ? esc(locs.slice(0, 3).join("; ") + (locs.length > 3 ? ` +${locs.length - 3}` : "")) : "Location not listed",
+    esc(termOf(r)),
+    j.pay ? esc(j.pay) : "",
+    `Found ${ago(r.first_seen)} on ${r.source === "simplify" ? "Simplify" : "the company site"}`,
+  ].filter(Boolean).map((f) => `<span>${f}</span>`).join("");
+  const reason = j.final_reason || j.reason || "";
+  const fbNote = r.user_status === "not_fit"
+    ? `<div class="note">Not a fit: the ${r.feedback_kind === "company" ? "company" : "role"}${r.feedback_reason ? ` - ${esc(r.feedback_reason)}` : ""}</div>` : "";
+  const applied = r.user_status === "applied" ? `<div class="note">Applied ${ago(r.applied_at)}</div>` : "";
+
+  let actions;
+  if (r.user_status) {
+    actions = `<a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">Open posting</a>
+      ${r.user_status === "not_fit" ? `<button class="btn small" data-act="reason">${r.feedback_reason ? "Edit reason" : "Add reason"}</button>` : ""}
+      <button class="btn small" data-act="undo">Undo</button>`;
+  } else {
+    actions = `<a class="btn primary" href="${esc(r.url)}" target="_blank" rel="noopener">Open posting</a>
+      <button class="btn" data-act="applied">Applied</button>
+      <button class="btn" data-act="notfit">Not a fit</button>`;
+  }
+  const open = state.open === r.id ? feedbackForm(r) : "";
+  return `<div class="card ${r.active ? "" : "closed"}" data-id="${r.id}">
+    <div class="top"><div class="titles"><div class="company">${esc(r.company)}</div>
+      <div class="title"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></div></div>
+      <div class="badges">${badges}</div></div>
+    <div class="facts">${facts}</div>
+    ${reason ? `<div class="reason ${r.verdict === "skip" ? "muted" : ""}">${esc(reason)}</div>` : ""}
+    ${fbNote}${applied}
+    <div class="actions">${actions}${open}</div>
+  </div>`;
+}
+
+function feedbackForm(r) {
+  const editing = r.user_status === "not_fit";
+  return `<div class="fb">
+    ${editing ? "" : `<span class="seg"><button data-kind="role" class="on">The role</button><button data-kind="company">The company</button></span>`}
+    <input type="text" maxlength="300" placeholder="Why? (optional, helps the filter learn)" value="${esc(r.feedback_reason || "")}">
+    <button class="btn small primary" data-act="save">Save</button>
+    <button class="btn small" data-act="cancel">Cancel</button>
+  </div>`;
+}
+
+function renderList() {
+  const rows = filtered();
+  const blurb = {
+    matches: "Postings the AI rated a good fit. Best first: top-tier companies, then newest.",
+    maybe: "Borderline postings: worth a look, not worth a notification.",
+    applied: "Postings you marked as applied.",
+    not_fit: "Postings you marked as not a fit. These teach the AI filter what to skip.",
+    skipped: "Postings the AI read and turned down, with its reason - useful for checking it isn't too strict.",
+  }[state.tab];
+  $("#body").innerHTML = `
+    <p class="note">${blurb}</p>
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="Search company, role, location" value="${esc(state.q)}">
+      <select id="term">
+        <option value="">All terms</option><option value="Fall 2027">Fall 2027</option>
+        <option value="Summer 2027">Summer 2027</option><option value="none">Term not listed</option>
+      </select>
+      <select id="source"><option value="">All sources</option><option value="direct">Company sites</option><option value="simplify">Simplify</option></select>
+      <select id="sort"><option value="best">Best first</option><option value="new">Newest first</option></select>
+      <label class="note" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="newOnly" ${state.newOnly ? "checked" : ""}> New since tracking started</label>
+    </div>
+    <div id="list">${rows.length ? rows.map(card).join("") : `<div class="empty">Nothing here${state.q || state.term || state.source ? " for these filters" : " yet"}.</div>`}</div>`;
+  $("#term").value = state.term; $("#source").value = state.source; $("#sort").value = state.sort;
+  $("#q").oninput = (e) => { state.q = e.target.value; rerenderList(); };
+  $("#term").onchange = (e) => { state.term = e.target.value; rerenderList(); };
+  $("#source").onchange = (e) => { state.source = e.target.value; rerenderList(); };
+  $("#sort").onchange = (e) => { state.sort = e.target.value; rerenderList(); };
+  $("#newOnly").onchange = (e) => { state.newOnly = e.target.checked; rerenderList(); };
+  wireCards();
+}
+
+function rerenderList() {
+  const rows = filtered();
+  $("#list").innerHTML = rows.length ? rows.map(card).join("") : `<div class="empty">Nothing here for these filters.</div>`;
+  wireCards();
+}
+
+function findRow(id) {
+  for (const rows of Object.values(state.rows)) { const r = (rows || []).find((x) => x.id === id); if (r) return r; }
+}
+
+function wireCards() {
+  document.querySelectorAll(".card").forEach((el) => {
+    const id = Number(el.dataset.id);
+    el.querySelectorAll("[data-kind]").forEach((b) => (b.onclick = () => {
+      el.querySelectorAll("[data-kind]").forEach((x) => x.classList.toggle("on", x === b));
+    }));
+    el.querySelectorAll("[data-act]").forEach((b) => (b.onclick = () => act(id, b.dataset.act, el)));
+  });
+}
+
+async function act(id, action, el) {
+  const r = findRow(id);
+  if (action === "notfit" || action === "reason") { state.open = id; return rerenderList(); }
+  if (action === "cancel") { state.open = null; return rerenderList(); }
+  try {
+    if (action === "applied") {
+      await api("/api/act", { method: "POST", body: { ids: [id], action: "applied" } });
+      moved(r, { user_status: "applied", applied_at: new Date().toISOString() }, "Marked as applied");
+    } else if (action === "save") {
+      const reason = el.querySelector(".fb input").value.trim();
+      if (r.user_status === "not_fit") {
+        await api("/api/act", { method: "POST", body: { ids: [id], action: "reason", reason } });
+        Object.assign(r, { feedback_reason: reason }); state.open = null; rerenderList();
+        return toast("Reason saved");
+      }
+      const kind = el.querySelector("[data-kind].on")?.dataset.kind || "role";
+      await api("/api/act", { method: "POST", body: { ids: [id], action: "not_fit", kind, reason } });
+      state.open = null;
+      moved(r, { user_status: "not_fit", feedback_kind: kind, feedback_reason: reason, feedback_at: new Date().toISOString() }, "Marked as not a fit");
+    } else if (action === "undo") {
+      await api("/api/act", { method: "POST", body: { ids: [id], action: "undo" } });
+      moved(r, { user_status: null, feedback_kind: null, feedback_reason: null, applied_at: null }, "Undone");
+    }
+  } catch (e) {
+    if (e.message !== "signed out") toast(`Couldn't save: ${e.message}`);
+  }
+}
+
+function moved(r, patch, msg) {
+  const before = { user_status: r.user_status, feedback_kind: r.feedback_kind, feedback_reason: r.feedback_reason, applied_at: r.applied_at };
+  Object.assign(r, patch);
+  // Lists change membership; reload the others lazily.
+  for (const k of Object.keys(state.rows)) if (k !== state.tab) delete state.rows[k];
+  state.rows[state.tab] = state.rows[state.tab].filter((x) => x.id !== r.id || state.tab === "skipped" && !r.user_status);
+  state.counts[state.tab] = state.rows[state.tab].length;
+  shell(); renderList();
+  if (patch.user_status !== null) {
+    toast(msg, async () => {
+      await api("/api/act", { method: "POST", body: { ids: [r.id], action: "undo" } });
+      Object.assign(r, before);
+      delete state.rows[state.tab]; await load(state.tab); renderList();
+    });
+  } else toast(msg);
+}
+
+async function renderCoverage() {
+  $("#body").innerHTML = `<div class="empty">Loading...</div>`;
+  const st = state.status = await api("/api/status");
+  const cov = st.coverage || [];
+  const runs = st.runs || [];
+  $("#body").innerHTML = `
+    <p class="note">For each company tracked on its own careers site: how many of the roles found there Simplify also listed, and how many hours later on average (negative = Simplify was first). Counts only roles that appeared after tracking started.</p>
+    ${cov.length ? `<div class="scroll"><table><tr><th>Company</th><th class="num">Found on site</th><th class="num">Also on Simplify</th><th class="num">Simplify lag</th></tr>
+      ${cov.map((c) => `<tr><td>${esc(c.company)}</td><td class="num">${c.direct_postings}</td>
+        <td class="num">${c.on_simplify} (${c.pct_on_simplify ?? 0}%)</td>
+        <td class="num">${c.avg_lag_hours == null ? "-" : `${c.avg_lag_hours}h`}</td></tr>`).join("")}</table></div>`
+      : `<div class="empty">No data yet - this fills in as new roles appear.</div>`}
+    <h2>Recent runs</h2>
+    <div class="scroll"><table><tr><th>Started</th><th class="num">New postings</th><th class="num">AI judged</th><th class="num">Notified</th><th>Problems</th></tr>
+      ${runs.map((r) => { const s = r.summary || {}; const errs = Object.keys(s.source_errors || {});
+        return `<tr><td>${new Date(r.started_at).toLocaleString()}</td><td class="num">${s.new_postings ?? "-"}</td>
+        <td class="num">${s.judged ?? "-"}</td><td class="num">${s.notifications ?? "-"}</td>
+        <td>${r.error ? `<span class="badge bad">Run failed</span>` : !r.finished_at ? "Running" : errs.length ? esc(errs.join(", ")) : "None"}</td></tr>`; }).join("")}
+    </table></div>`;
+}
+
+async function start() {
+  try {
+    state.status = await api("/api/status");
+    shell();
+    if (state.tab === "coverage") return renderCoverage();
+    await load(state.tab);
+    renderList();
+  } catch (e) {
+    if (e.message !== "signed out") $("#app").innerHTML = `<div class="empty">Couldn't load: ${esc(e.message)}</div>`;
+  }
+}
+start();
+</script>
+</body>
+</html>

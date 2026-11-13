@@ -1,0 +1,49 @@
+# Companies that never alert, whatever the AI thinks. Matched on the
+# company name (case and "Inc."/"Corp." ignored).
+companies:
+  - Bank of America
+  - Bloomberg
+  - OpenAI
+  - Morgan Stanley
+  - Robinhood
+  - Affirm
+  - Coinbase
+  - Bristol Myers Squibb
+  - Eli Lilly
+  # Quant / HFT
+  - Citadel
+  - Citadel Securities
+  - Jane Street
+  - D. E. Shaw
+  - Two Sigma
+  - Jump Trading
+  - Hudson River Trading
+  - Optiver
+  - IMC Trading
+  - Susquehanna International Group (SIG)
+  - Susquehanna International Group
+  - Akuna Capital
+  # Defense
+  - Palantir
+  - L3Harris Technologies
+  - Lockheed Martin
+  - Northrop Grumman
+  - RTX
+  - Raytheon
+  - Anduril
+  - General Dynamics
+  - BAE Systems
+  - Leidos
+  - Booz Allen Hamilton
+  - CACI International
+  - Huntington Ingalls Industries
+  - Leonardo DRS
+
+# Kinds of company the AI should skip (it reads these as instructions).
+categories:
+  - defense contractors and weapons makers
+  - quantitative trading, hedge funds and high-frequency trading firms
+  - lenders whose core business is interest (payday, consumer loans, buy-now-pay-later, margin trading)
+  - gambling, sports betting and fantasy sports
+  - alcohol, tobacco and cannabis
+  - crypto exchanges and crypto trading

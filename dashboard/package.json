@@ -1,0 +1,6 @@
+{
+  "name": "job-agent-dashboard",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" }
+}

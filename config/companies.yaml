@@ -1,0 +1,278 @@
+# Companies you care about.
+#
+# Every company here is "on your radar": the AI treats it as a company you
+# like when it rates how good a posting is. Companies with a `site` are
+# also checked directly on their own careers site every run, so you hear
+# about postings Simplify misses or lists late. Companies without one
+# (custom-built, bot-protected careers sites) come through Simplify only.
+#
+# Any other company still reaches you through Simplify if the AI rates the
+# posting a good fit - this list isn't a whitelist.
+#
+# To add a company:  python scripts/find_job_site.py "Company Name"
+#
+# site types: workday, greenhouse, lever, ashby, smartrecruiters, icims,
+#             oracle, eightfold, successfactors, jibe, radancy
+# aliases: other spellings Simplify uses for the company.
+
+companies:
+
+  # ---------------------------------------------------------- big tech
+  - name: Google
+  - name: Microsoft
+  - name: Apple
+  - name: Amazon
+  - name: Meta
+  - name: NVIDIA
+    site: {type: workday, host: nvidia.wd5.myworkdayjobs.com, tenant: nvidia, site: NVIDIAExternalCareerSite}
+  - name: Stripe
+    site: {type: greenhouse, board: stripe}
+  - name: Databricks
+    site: {type: greenhouse, board: databricks}
+  - name: Salesforce
+    site: {type: workday, host: salesforce.wd12.myworkdayjobs.com, tenant: salesforce, site: External_Career_Site}
+  - name: Adobe
+    site: {type: workday, host: adobe.wd5.myworkdayjobs.com, tenant: adobe, site: external_experienced}
+  - name: Oracle
+    site: {type: oracle, host: eeho.fa.us2.oraclecloud.com, site: CX_45001}
+  - name: Anthropic
+    site: {type: greenhouse, board: anthropic}
+  - name: Datadog
+    site: {type: greenhouse, board: datadog}
+  - name: Cloudflare
+    site: {type: greenhouse, board: cloudflare}
+  - name: Intuit
+  - name: Figma
+    site: {type: greenhouse, board: figma}
+  - name: Notion
+    site: {type: ashby, org: notion}
+  - name: ServiceNow
+    site: {type: smartrecruiters, company: ServiceNow}
+  - name: LinkedIn
+    site: {type: smartrecruiters, company: LinkedIn3}
+  - name: Pinterest
+    site: {type: greenhouse, board: pinterest}
+  - name: MongoDB
+    site: {type: greenhouse, board: mongodb}
+  - name: Snowflake
+    site: {type: ashby, org: snowflake}
+  - name: Netflix
+
+  # ------------------------------------------- healthcare and medtech
+  - name: Epic Systems
+    aliases: [Epic]
+  - name: Garmin
+    site: {type: jibe, host: careers.garmin.com}
+  - name: Regeneron
+    aliases: [Regeneron Pharmaceuticals]
+    site: {type: workday, host: regeneron.wd1.myworkdayjobs.com, tenant: regeneron, site: Careers}
+  - name: ModMed
+    aliases: [Modernizing Medicine]
+    site: {type: workday, host: modmed.wd501.myworkdayjobs.com, tenant: modmed, site: ModMed12}
+  - name: Abbott
+    site: {type: workday, host: abbott.wd5.myworkdayjobs.com, tenant: abbott, site: abbottcareers}
+  - name: Stryker
+    site: {type: workday, host: stryker.wd1.myworkdayjobs.com, tenant: stryker, site: StrykerCareers}
+  - name: Philips
+    site: {type: workday, host: philips.wd3.myworkdayjobs.com, tenant: philips, site: jobs-and-careers}
+  - name: GE HealthCare
+    aliases: [GE Healthcare]
+    site: {type: workday, host: gehc.wd5.myworkdayjobs.com, tenant: gehc, site: GEHC_ExternalSite}
+  - name: Insulet
+    aliases: [Insulet Corporation]
+    site: {type: workday, host: insulet.wd5.myworkdayjobs.com, tenant: insulet, site: insuletcareers}
+  - name: Danaher
+    aliases: [Danaher Corporation]
+    site: {type: workday, host: danaher.wd1.myworkdayjobs.com, tenant: danaher, site: DanaherJobs}
+  - name: Medtronic
+    site: {type: workday, host: medtronic.wd1.myworkdayjobs.com, tenant: medtronic, site: MedtronicCareers}
+  - name: Pfizer
+    site: {type: workday, host: pfizer.wd1.myworkdayjobs.com, tenant: pfizer, site: PfizerCareers}
+  - name: Edwards Lifesciences
+    site: {type: workday, host: edwards.wd5.myworkdayjobs.com, tenant: edwards, site: EdwardsCareers}
+  - name: Dexcom
+    site: {type: workday, host: dexcom.wd1.myworkdayjobs.com, tenant: dexcom, site: Dexcom}
+  - name: Boston Scientific
+    site: {type: eightfold, host: bostonscientific.eightfold.ai, domain: bostonscientific.com}
+  - name: Merck
+    site: {type: workday, host: msd.wd5.myworkdayjobs.com, tenant: msd, site: SearchJobs}
+  - name: Johnson & Johnson
+    aliases: [J&J, Johnson and Johnson]
+    site: {type: workday, host: jj.wd5.myworkdayjobs.com, tenant: jj, site: JJ}
+  - name: Amgen
+    site: {type: workday, host: amgen.wd1.myworkdayjobs.com, tenant: amgen, site: Careers}
+  - name: Veeva Systems
+    aliases: [Veeva]
+    site: {type: lever, site: veeva}
+  - name: Cook Medical
+    aliases: [Cook Group]
+    site: {type: icims, host: americas-cookmedical.icims.com}
+  - name: Oura
+    site: {type: greenhouse, board: oura}
+  - name: Zimmer Biomet
+    aliases: [Zimmer Biomet Holdings]
+  - name: Becton Dickinson
+    aliases: [BD]
+    site: {type: workday, host: bdx.wd1.myworkdayjobs.com, tenant: bdx, site: EXTERNAL_CAREER_SITE_USA}
+  - name: Intuitive Surgical
+    aliases: [Intuitive]
+    site: {type: smartrecruiters, company: Intuitive}
+  - name: Tempus AI
+    aliases: [Tempus]
+    site: {type: workday, host: tempus.wd5.myworkdayjobs.com, tenant: tempus, site: Tempus_Careers}
+  - name: Arthrex
+    site: {type: successfactors, host: careers.arthrex.com}
+  - name: Siemens Healthineers
+    site: {type: workday, host: onehealthineers.wd3.myworkdayjobs.com, tenant: onehealthineers, site: SHSJB}
+  - name: Flatiron Health
+    site: {type: greenhouse, board: flatironhealth}
+  - name: Doximity
+    site: {type: greenhouse, board: doximity}
+  - name: athenahealth
+    aliases: [Athena Health]
+    site: {type: workday, host: athenahealth.wd1.myworkdayjobs.com, tenant: athenahealth, site: External}
+  - name: ResMed
+    aliases: [Resmed]
+    site: {type: workday, host: resmed.wd3.myworkdayjobs.com, tenant: resmed, site: ResMed_External_Careers}
+  - name: Masimo
+  - name: Hologic
+    site: {type: oracle, host: ebwb.fa.us2.oraclecloud.com, site: CX}
+  - name: Thermo Fisher
+    aliases: [Thermo Fisher Scientific]
+    site: {type: workday, host: thermofisher.wd5.myworkdayjobs.com, tenant: thermofisher, site: ThermoFisherCareers}
+
+  # ------------------------------------------------------------ finance
+  - name: Capital One
+    site: {type: workday, host: capitalone.wd12.myworkdayjobs.com, tenant: capitalone, site: Capital_One}
+  - name: American Express
+    site: {type: oracle, host: egug.fa.us2.oraclecloud.com, site: CX_1}
+  - name: Plaid
+    site: {type: ashby, org: plaid}
+  - name: Ramp
+    site: {type: ashby, org: ramp}
+
+  # ------------------------------------------- enterprise and dev tools
+  - name: Atlassian
+  - name: Workday
+    site: {type: workday, host: workday.wd5.myworkdayjobs.com, tenant: workday, site: Workday_Early_Career}
+  - name: Autodesk
+    site: {type: workday, host: autodesk.wd1.myworkdayjobs.com, tenant: autodesk, site: Ext}
+  - name: Twilio
+    site: {type: greenhouse, board: twilio}
+  - name: HubSpot
+  - name: Okta
+    site: {type: greenhouse, board: okta}
+  - name: Zoom
+    site: {type: workday, host: zoom.wd5.myworkdayjobs.com, tenant: zoom, site: Zoom}
+  - name: DocuSign
+    aliases: [Docusign]
+  - name: Dropbox
+    site: {type: greenhouse, board: dropbox}
+  - name: GitLab
+    site: {type: greenhouse, board: gitlab}
+  - name: Elastic
+    site: {type: greenhouse, board: elastic}
+
+  # ----------------------------------------------------------- security
+  - name: Palo Alto Networks
+    site: {type: workday, host: paloaltonetworks.wd5.myworkdayjobs.com, tenant: paloaltonetworks, site: panwexternalcareers}
+  - name: CrowdStrike
+    aliases: [Crowdstrike]
+    site: {type: workday, host: crowdstrike.wd5.myworkdayjobs.com, tenant: crowdstrike, site: crowdstrikecareers}
+  - name: Zscaler
+    site: {type: greenhouse, board: zscaler}
+  - name: Fortinet
+    site: {type: oracle, host: edel.fa.us2.oraclecloud.com, site: CX_2001}
+
+  # ------------------------------------------------- chips and hardware
+  - name: Qualcomm
+    site: {type: eightfold, host: qualcomm.eightfold.ai, domain: qualcomm.com}
+  - name: AMD
+  - name: Intel
+    site: {type: workday, host: intel.wd1.myworkdayjobs.com, tenant: intel, site: External}
+  - name: Texas Instruments
+    site: {type: oracle, host: edbz.fa.us2.oraclecloud.com, site: CX}
+  - name: Micron
+    aliases: [Micron Technology]
+    site: {type: workday, host: micron.wd1.myworkdayjobs.com, tenant: micron, site: External}
+  - name: Arm
+    site: {type: radancy, host: careers.arm.com}
+  - name: Cisco
+    site: {type: workday, host: cisco.wd5.myworkdayjobs.com, tenant: cisco, site: cisco_careers}
+  - name: IBM
+  - name: Broadcom
+    site: {type: workday, host: broadcom.wd1.myworkdayjobs.com, tenant: broadcom, site: External_Career}
+  - name: Lam Research
+    site: {type: eightfold, host: careers.lamresearch.com, domain: lamresearch.com}
+  - name: Synopsys
+  - name: Arista Networks
+    site: {type: smartrecruiters, company: AristaNetworks}
+  - name: Applied Materials
+    site: {type: workday, host: amat.wd1.myworkdayjobs.com, tenant: amat, site: External}
+  - name: Marvell
+    site: {type: workday, host: marvell.wd1.myworkdayjobs.com, tenant: marvell, site: MarvellCareers}
+  - name: Cadence
+    aliases: [Cadence Design Systems]
+    site: {type: workday, host: cadence.wd1.myworkdayjobs.com, tenant: cadence, site: External_Careers}
+  - name: Pure Storage
+    site: {type: greenhouse, board: purestorage}
+  - name: Verkada
+    site: {type: greenhouse, board: verkada}
+  - name: Bose
+    site: {type: workday, host: boseallaboutme.wd503.myworkdayjobs.com, tenant: boseallaboutme, site: Bose_Careers}
+
+  # ----------------------------------------------- consumer and travel
+  - name: Uber
+  - name: Airbnb
+    site: {type: greenhouse, board: airbnb}
+  - name: Lyft
+    site: {type: greenhouse, board: lyft}
+  - name: Zillow
+    aliases: [Zillow Group]
+    site: {type: workday, host: zillow.wd5.myworkdayjobs.com, tenant: zillow, site: Zillow_Group_External}
+  - name: Duolingo
+    site: {type: greenhouse, board: duolingounirecruitment}
+  - name: DoorDash
+    site: {type: greenhouse, board: doordashusa}
+  - name: Instacart
+    site: {type: greenhouse, board: instacart}
+  - name: Disney
+    aliases: [The Walt Disney Company]
+    site: {type: workday, host: disney.wd5.myworkdayjobs.com, tenant: disney, site: disneycareerdc}
+
+  # ------------------------------------------- automotive and aerospace
+  - name: Tesla
+  - name: Rivian
+  - name: Ford
+    aliases: [Ford Motor Company]
+    site: {type: oracle, host: efds.fa.em5.oraclecloud.com, site: CX_1}
+  - name: General Motors
+    aliases: [GM]
+    site: {type: workday, host: generalmotors.wd5.myworkdayjobs.com, tenant: generalmotors, site: Careers_GM}
+  - name: SpaceX
+    site: {type: greenhouse, board: spacex}
+  - name: Blue Origin
+    site: {type: workday, host: blueorigin.wd5.myworkdayjobs.com, tenant: blueorigin, site: blueorigin}
+  - name: GE Aerospace
+    site: {type: workday, host: geaerospace.wd5.myworkdayjobs.com, tenant: geaerospace, site: ge_externalsite}
+  - name: Honeywell
+    site: {type: oracle, host: ibqbjb.fa.ocs.oraclecloud.com, site: Honeywell}
+
+  # ------------------------------------------------------------ Florida
+  - name: NextEra Energy
+    aliases: [Florida Power & Light, FPL]
+  - name: Carrier
+    aliases: [Carrier Global]
+    site: {type: workday, host: carrier.wd5.myworkdayjobs.com, tenant: carrier, site: jobs}
+  - name: Chewy
+    site: {type: workday, host: chewy.wd5.myworkdayjobs.com, tenant: chewy, site: External}
+  - name: UKG
+  - name: Cloud Software Group
+    aliases: [Citrix]
+  - name: Kaseya
+    site: {type: greenhouse, board: kaseya}
+  - name: Jabil
+    site: {type: workday, host: jabil.wd5.myworkdayjobs.com, tenant: jabil, site: Jabil_Careers}
+  - name: Raymond James
+    aliases: [Raymond James Financial]
+    site: {type: workday, host: raymondjames.wd1.myworkdayjobs.com, tenant: raymondjames, site: RaymondJamesEarlyCareers}
