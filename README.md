@@ -140,7 +140,8 @@ Google Cloud's Vertex AI; at this volume it costs a few dollars a month.
    Supabase then starts the workflow every 30 minutes. (GitHub's own cron is
    kept as a backup, but it often runs hours late.)
 10. **Test:** run the *Run tracker* workflow by hand from the Actions tab,
-    then open the dashboard. When you're happy with what it finds, set
+    then open the dashboard. The *Send test notification* workflow pushes
+    one real notification to your phone. When you're happy with what it finds, set
     `notifications.enabled: true`.
 
 ## Running locally
