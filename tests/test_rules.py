@@ -14,7 +14,7 @@ SETTINGS = {
 def cfg():
     return config.Config(settings=SETTINGS, companies=[config.Company("Stripe")],
                          blocked_companies={"palantir"}, blocked_categories=["defense"],
-                         profile="")
+                         profile="", blocked_titles=["Government Technologies"])
 
 
 def simplify(**kw):
@@ -31,6 +31,7 @@ def test_passes_good_posting(cfg):
 
 @pytest.mark.parametrize("kw,reason", [
     ({"company": "Palantir"}, "blocked company"),
+    ({"title": "Qualcomm Government Technologies Engineering Intern"}, "blocked title"),
     ({"locations": ["Toronto, Canada"]}, "outside the US"),
     ({"category": "Quant"}, "category: Quant"),
     ({"category": "Hardware", "title": "Analog Design Intern"}, "hardware role without software"),

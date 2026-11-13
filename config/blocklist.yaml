@@ -39,6 +39,18 @@ companies:
   - Huntington Ingalls Industries
   - Leonardo DRS
 
+  # Not for me
+  - Tinder
+  - Match Group
+  - TikTok
+  - ByteDance
+
+# Phrases that block a posting when they appear in its title (for one
+# division of a company you otherwise like).
+titles:
+  - Qualcomm Government Technologies
+  - QGOV
+
 # Kinds of company the AI should skip (it reads these as instructions).
 categories:
   - defense contractors and weapons makers
@@ -47,3 +59,4 @@ categories:
   - gambling, sports betting and fantasy sports
   - alcohol, tobacco and cannabis
   - crypto exchanges and crypto trading
+  - dating apps

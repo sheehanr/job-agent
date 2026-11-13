@@ -83,6 +83,8 @@ def pre_ai(posting, cfg):
 
     if cfg.is_blocked(posting.get("company")):
         return "blocked company"
+    if cfg.blocked_title(title):
+        return "blocked title"
     if not posting.get("active", True):
         return "no longer listed"
     if posting["source"] != "simplify" and not is_internship(title):

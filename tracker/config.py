@@ -33,6 +33,7 @@ class Config:
     blocked_companies: set
     blocked_categories: list
     profile: str
+    blocked_titles: list = field(default_factory=list)
 
     def company_for(self, name):
         """The configured Company matching a posting's company name, or None."""
@@ -46,6 +47,10 @@ class Config:
 
     def is_blocked(self, name):
         return normalize(name) in self.blocked_companies
+
+    def blocked_title(self, title):
+        title = (title or "").lower()
+        return any(p.lower() in title for p in self.blocked_titles)
 
     def __post_init__(self):
         self._by_key = {}
@@ -80,6 +85,7 @@ def load(config_dir=CONFIG_DIR):
         blocked_companies={normalize(n) for n in blocklist.get("companies") or []},
         blocked_categories=blocklist.get("categories") or [],
         profile=(config_dir / "profile.md").read_text(),
+        blocked_titles=blocklist.get("titles") or [],
     )
 
 

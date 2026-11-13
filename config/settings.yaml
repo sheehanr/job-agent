@@ -31,7 +31,7 @@ ai:
 # Notifications. Off = "shadow mode": everything is checked and saved to
 # the dashboard, but nothing is pushed to your phone.
 notifications:
-  enabled: false
+  enabled: true
   verdicts: [alert]      # add "maybe" to also get borderline matches
   dashboard_url: https://sheehan-job-agent.vercel.app
 
