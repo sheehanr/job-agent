@@ -28,6 +28,7 @@ def fetch(company, site, s):
                     "locations": [", ".join(x for x in (d.get("full_location"), d.get("country")) if x)],
                     "url": f"https://{site['host']}/jobs/{d.get('slug') or d['req_id']}",
                     "description": html_to_text(d.get("description")),
+                    "posted": d.get("posted_date"),
                 }
 
             if len(jobs) < 100:

@@ -21,3 +21,16 @@ def test_normalize_company():
     assert normalize("Insulet Corporation") == "insulet"
     assert normalize("Micron Technology, Inc.") == "micron"
     assert normalize("Johnson & Johnson") == "johnson & johnson"
+
+
+def test_posted_dates():
+    from datetime import datetime, timezone
+    from tracker.sources.http import posted_date
+    d, approx = posted_date("Posted 30+ Days Ago")
+    assert approx and (datetime.now(timezone.utc) - d).days == 30
+    d, approx = posted_date("Posted Today")
+    assert not approx and (datetime.now(timezone.utc) - d).days == 0
+    assert posted_date("2026-10-07T05:33:51-04:00")[0].year == 2026
+    assert posted_date(1764950728481)[0].year == 2025
+    assert posted_date(1794260791)[0].year == 2026
+    assert posted_date(None) == (None, False)

@@ -39,6 +39,7 @@ def fetch(company, site, s):
                             f"{site['site']}/job/{req['Id']}"),
                     "site": site,
                     "job_id": req["Id"],
+                    "posted": req.get("PostedDate"),
                 }
 
             if len(reqs) < 50:

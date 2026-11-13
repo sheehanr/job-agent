@@ -2,7 +2,7 @@ import { requireAuth, sb } from "./_lib.js";
 
 const FIELDS = [
   "id", "source", "company", "title", "locations", "url", "terms", "tier", "verdict",
-  "judgment", "description_status", "first_seen", "posted_at", "active", "baseline",
+  "judgment", "description_status", "first_seen", "posted_at", "posted_approx", "active", "baseline",
   "user_status", "feedback_kind", "feedback_reason", "feedback_at", "applied_at",
 ].join(",");
 

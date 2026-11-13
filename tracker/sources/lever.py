@@ -48,6 +48,7 @@ def fetch(company, site, s):
             "locations": _locations(job),
             "url": job.get("hostedUrl") or "",
             "description": _posting_text(job),
+            "posted": job.get("createdAt"),
         })
 
     return out

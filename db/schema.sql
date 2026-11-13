@@ -19,6 +19,7 @@ create table if not exists postings (
   category           text not null default '',
   detail             jsonb,                    -- how to fetch the description
   posted_at          timestamptz,
+  posted_approx      boolean not null default false,  -- "30+ days ago" style dates
   first_seen         timestamptz not null default now(),
   last_seen          timestamptz not null default now(),
   active             boolean not null default true,
@@ -92,3 +93,6 @@ grant select, insert, update, delete on postings, runs, meta to service_role;
 grant select on coverage to service_role;
 grant usage, select on all sequences in schema public to service_role;
 revoke all on postings, runs, meta, coverage from anon, authenticated;
+
+-- Added after launch.
+alter table postings add column if not exists posted_approx boolean not null default false;

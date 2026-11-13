@@ -26,6 +26,7 @@ def fetch(company, site, s):
             "url": job.get("absolute_url") or "",
             "site": site,
             "job_id": job["id"],
+            "posted": job.get("first_published"),
         })
 
     return out

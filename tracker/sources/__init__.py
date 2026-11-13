@@ -1,5 +1,7 @@
 """Job-site adapters, keyed by the `site.type` used in companies.yaml."""
 
+from tracker.sources.http import posted_date
+
 from tracker.sources import (ashby, eightfold, greenhouse, icims, jibe, lever, oracle,
                              radancy, smartrecruiters, successfactors, workday)
 
@@ -29,6 +31,7 @@ def fetch_company(company, s):
     postings = adapter.fetch(company, site, s)
 
     for p in postings:
+        p["posted_at"], p["posted_approx"] = posted_date(p.pop("posted", None))
         detail = {k: v for k, v in site.items()}
         for field in _REF_FIELDS:
             if field in p:

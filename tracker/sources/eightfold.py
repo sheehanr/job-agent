@@ -30,6 +30,7 @@ def fetch(company, site, s):
                     "url": f"https://{site['host']}/careers/job/{p['id']}",
                     "site": site,
                     "job_id": p["id"],
+                    "posted": p.get("postedTs"),
                 }
 
             if start + 10 >= (data.get("count") or 0) or not positions:

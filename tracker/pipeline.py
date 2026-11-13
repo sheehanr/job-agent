@@ -91,6 +91,16 @@ def store(conn, cfg, found, log):
 
         db.touch(conn, [existing[k] for k in keys if k in existing])
 
+        # Fill in posting dates for postings stored before dates were read.
+        dated = [p for p in postings if p.get("posted_at") and p["source_key"] in existing]
+        if dated:
+            conn.execute("""
+                update postings p set posted_at = x.d, posted_approx = x.a
+                from unnest(%s::text[], %s::timestamptz[], %s::bool[]) as x(k, d, a)
+                where p.source_key = x.k and p.posted_at is null""",
+                ([q["source_key"] for q in dated], [q["posted_at"] for q in dated],
+                 [bool(q.get("posted_approx")) for q in dated]))
+
         for p in postings:
             if p["source_key"] in existing or not p.get("active", True):
                 continue

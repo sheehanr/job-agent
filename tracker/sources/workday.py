@@ -56,6 +56,7 @@ def fetch(company, site, s):
                     "url": f"https://{site['host']}/{site['site']}{path}",
                     "site": site,
                     "path": path,
+                    "posted": job.get("postedOn"),
                 }
 
             if offset + PAGE >= (data.get("total") or 0) or not postings:

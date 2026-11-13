@@ -35,3 +35,40 @@ def html_to_text(markup, limit=15000):
     text = re.sub(r"\n\s*\n+", "\n\n", text)
 
     return text.strip()[:limit]
+
+
+def posted_date(value):
+    """
+    A posting date from whatever a job site gives: ISO text, epoch seconds
+    or milliseconds, or Workday's "Posted 3 Days Ago" / "Posted 30+ Days
+    Ago". Returns (datetime or None, approximate). "30+" dates are a
+    lower bound, so they're flagged approximate.
+    """
+
+    from datetime import datetime, timedelta, timezone
+
+    if value in (None, ""):
+        return None, False
+
+    now = datetime.now(timezone.utc)
+
+    if isinstance(value, (int, float)):
+        seconds = value / 1000 if value > 1e11 else value
+        return datetime.fromtimestamp(seconds, tz=timezone.utc), False
+
+    text = str(value).strip()
+
+    m = re.search(r"posted\s+(today|yesterday|(\d+)(\+)?\s+days?\s+ago)", text, re.I)
+    if m:
+        if m.group(1).lower() == "today":
+            return now, False
+        if m.group(1).lower() == "yesterday":
+            return now - timedelta(days=1), False
+        return now - timedelta(days=int(m.group(2))), bool(m.group(3))
+
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None, False
+
+    return (parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)), False

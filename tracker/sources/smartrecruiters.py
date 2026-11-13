@@ -41,6 +41,7 @@ def fetch(company, site, s):
                 "url": f"https://jobs.smartrecruiters.com/{site['company']}/{job['id']}",
                 "site": site,
                 "job_id": job["id"],
+                "posted": job.get("releasedDate"),
             })
 
         if offset + 100 >= (data.get("totalFound") or 0) or not content:

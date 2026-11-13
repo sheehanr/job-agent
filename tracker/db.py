@@ -14,7 +14,7 @@ SCHEMA = ROOT / "db" / "schema.sql"
 
 POSTING_FIELDS = ("source", "source_key", "company", "company_key", "title", "title_key",
                   "locations", "url", "terms", "degrees", "category", "detail",
-                  "posted_at", "active", "baseline", "description")
+                  "posted_at", "posted_approx", "active", "baseline", "description")
 
 
 @contextmanager
