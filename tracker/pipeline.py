@@ -283,6 +283,37 @@ def match_coverage(conn):
     return matched
 
 
+def fill_dates_from_simplify(conn):
+    """
+    Company-site postings with no date (some job sites don't give one, or
+    only "30+ days ago") borrow the date of the same role on Simplify,
+    which records when it listed it - usually within hours of the company.
+    """
+
+    undated = db.rows(conn, """
+        select id, company_key, title from postings
+        where source not in ('simplify', 'legacy') and (posted_at is null or posted_approx)""")
+    if not undated:
+        return 0
+
+    keys = list({u["company_key"] for u in undated})
+    listed = {}
+    for r in db.rows(conn, """
+            select company_key, title, posted_at from postings
+            where source = 'simplify' and posted_at is not null and company_key = any(%s)""",
+                     (keys,)):
+        listed.setdefault(r["company_key"], []).append(r)
+
+    filled = 0
+    for u in undated:
+        for r in listed.get(u["company_key"], []):
+            if same_role(u["title"], r["title"]):
+                db.update(conn, u["id"], posted_at=r["posted_at"], posted_approx=False)
+                filled += 1
+                break
+    return filled
+
+
 def notify_new(conn, cfg, log):
     """Push (or in shadow mode, just record) new matches."""
 
@@ -347,6 +378,7 @@ def run(cfg, log=print):
             conn.commit()
 
             summary["coverage_matches"] = match_coverage(conn)
+            summary["dates_from_simplify"] = fill_dates_from_simplify(conn)
             summary["notifications"] = notify_new(conn, cfg, log)
             summary["seconds"] = round((_now() - started).total_seconds())
 

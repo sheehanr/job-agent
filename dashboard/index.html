@@ -5,15 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Job Agent</title>
 <meta name="robots" content="noindex">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233ee08f'/%3E%3Cpath d='M9 12h14v11a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2zM13 12V9.5A1.5 1.5 0 0 1 14.5 8h3A1.5 1.5 0 0 1 19 9.5V12' fill='none' stroke='%2303150c' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ff7a1a'/%3E%3Cpath d='M9 12h14v11a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2zM13 12V9.5A1.5 1.5 0 0 1 14.5 8h3A1.5 1.5 0 0 1 19 9.5V12' fill='none' stroke='%231a0a00' stroke-width='2'/%3E%3C/svg%3E">
 <style>
 :root {
-  --bg: #0a0b0e; --panel: #121419; --field: #181b21; --text: #eef0f3; --muted: #9aa1ad;
-  --faint: #6b717c; --line: #23272e; --line-strong: #343a44;
-  --accent: #3ee08f; --accent-ink: #03150c; --accent-soft: rgba(62, 224, 143, .12);
-  --warn: #ffb547; --warn-soft: rgba(255, 181, 71, .12);
-  --bad: #ff6b6b; --bad-soft: rgba(255, 107, 107, .12);
-  --chip: #1c2027; --shadow: 0 1px 0 rgba(255, 255, 255, .02) inset;
+  --bg: #060607; --panel: #0f1013; --field: #16181c; --text: #f1f2f4; --muted: #9ba1ab;
+  --faint: #6a707a; --line: #1f2228; --line-strong: #30343c;
+  --accent: #ff7a1a; --accent-ink: #1a0a00; --accent-soft: rgba(255, 122, 26, .14);
+  --accent-glow: rgba(255, 122, 26, .55);
+  --warn: #f5c84c; --warn-soft: rgba(245, 200, 76, .12);
+  --bad: #ff5c5c; --bad-soft: rgba(255, 92, 92, .12);
+  --chip: #1a1d22; --shadow: 0 1px 0 rgba(255, 255, 255, .025) inset;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -26,7 +27,7 @@ button, input, select { font: inherit; color: inherit; }
 header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 header h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
 header h1::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--accent);
-  box-shadow: 0 0 12px rgba(62, 224, 143, .6); }
+  box-shadow: 0 0 14px var(--accent-glow); }
 header .meta { color: var(--muted); font-size: 13px; margin-left: auto; text-align: right; }
 .linkbtn { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0; font-size: 13px; }
 .linkbtn:hover { color: var(--text); }
@@ -53,7 +54,7 @@ nav.tabs .n { color: var(--faint); font-weight: 400; margin-left: 4px; font-size
 .title { font-size: 16px; font-weight: 600; margin-top: 1px; overflow-wrap: anywhere; }
 .title a { color: var(--text); }
 .title a:hover { color: var(--accent); text-decoration: none; }
-.facts .old { color: var(--warn); }
+.facts .old { color: var(--bad); }
 .badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .badge { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--chip);
   color: var(--muted); white-space: nowrap; font-weight: 500; }
@@ -294,7 +295,7 @@ function feedbackForm(r) {
 function renderList() {
   const rows = filtered();
   const blurb = {
-    matches: "Postings the AI rated a good fit. Best first: top-tier companies, then most recently posted. Dates in amber are over 45 days old.",
+    matches: "Postings the AI rated a good fit. Best first: top-tier companies, then most recently posted. Dates in red are over 45 days old.",
     maybe: "Borderline postings: worth a look, not worth a notification.",
     applied: "Postings you marked as applied.",
     not_fit: "Postings you marked as not a fit. These teach the AI filter what to skip.",
