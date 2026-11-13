@@ -283,6 +283,15 @@ def match_coverage(conn):
     return matched
 
 
+def _same_link(a, b):
+    """Same posting by apply link (ignoring query strings and language prefixes)."""
+
+    def tail(u):
+        return (u or "").split("?")[0].rstrip("/").rsplit("/", 1)[-1].lower()
+
+    return bool(tail(a)) and len(tail(a)) > 6 and tail(a) == tail(b)
+
+
 def fill_dates_from_simplify(conn):
     """
     Company-site postings with no date (some job sites don't give one, or
@@ -291,7 +300,7 @@ def fill_dates_from_simplify(conn):
     """
 
     undated = db.rows(conn, """
-        select id, company_key, title from postings
+        select id, company_key, title, url from postings
         where source not in ('simplify', 'legacy') and (posted_at is null or posted_approx)""")
     if not undated:
         return 0
@@ -299,7 +308,7 @@ def fill_dates_from_simplify(conn):
     keys = list({u["company_key"] for u in undated})
     listed = {}
     for r in db.rows(conn, """
-            select company_key, title, posted_at from postings
+            select company_key, title, url, posted_at from postings
             where source = 'simplify' and posted_at is not null and company_key = any(%s)""",
                      (keys,)):
         listed.setdefault(r["company_key"], []).append(r)
@@ -307,7 +316,7 @@ def fill_dates_from_simplify(conn):
     filled = 0
     for u in undated:
         for r in listed.get(u["company_key"], []):
-            if same_role(u["title"], r["title"]):
+            if _same_link(u["url"], r["url"]) or same_role(u["title"], r["title"]):
                 db.update(conn, u["id"], posted_at=r["posted_at"], posted_approx=False)
                 filled += 1
                 break
