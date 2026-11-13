@@ -83,6 +83,16 @@ def test_final_verdict(cfg):
     # Summer 2027 only counts at top-tier companies.
     assert rules.final_verdict(p, judgment(term="Summer 2027"), cfg)[0] == "skip"
     assert rules.final_verdict(p, judgment(term="Summer 2027", company_tier="top"), cfg)[0] == "alert"
+    # ...or wherever the AI says it beats the current offer (e.g. Florida).
+    assert rules.final_verdict(p, judgment(term="Summer 2027", beats_current_offer=True), cfg)[0] == "alert"
+    assert rules.final_verdict(p, judgment(term="Summer 2027", company_tier="top",
+                                           beats_current_offer=False), cfg)[0] == "skip"
     # A co-op spanning summer and fall counts.
     assert rules.final_verdict(p, judgment(term="Summer 2027, Fall 2027"), cfg)[0] == "alert"
     assert rules.final_verdict(p, judgment(term="Spring 2027"), cfg)[0] == "skip"
+
+
+def test_in_florida():
+    assert rules.in_florida({"locations": ["Weston, FL"]})
+    assert rules.in_florida({"locations": ["Juno Beach, Florida"]})
+    assert not rules.in_florida({"locations": ["Flint, MI"]})

@@ -64,6 +64,13 @@ def term_status(terms, settings):
     return "other"
 
 
+_FLORIDA_RE = re.compile(r"\bFL\b|\bFlorida\b", re.I)
+
+
+def in_florida(posting):
+    return any(_FLORIDA_RE.search(l or "") for l in posting.get("locations") or [])
+
+
 def all_terms(posting):
     return list(dict.fromkeys([*(posting.get("terms") or []), *terms_in(posting.get("title"))]))
 
@@ -135,7 +142,7 @@ def final_verdict(posting, judgment, cfg):
 
     if status == "other":
         return "skip", f"term: {', '.join(terms)}"
-    if status == "top_only" and j.get("company_tier") != "top":
-        return "skip", f"{ai_term or terms[0]} at a company that isn't top tier"
+    if status == "top_only" and not j.get("beats_current_offer", j.get("company_tier") == "top"):
+        return "skip", f"{ai_term or terms[0]} role that doesn't beat your current offer"
 
     return j.get("verdict") or "skip", j.get("reason") or ""

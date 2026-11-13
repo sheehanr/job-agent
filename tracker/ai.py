@@ -38,6 +38,9 @@ class Judgment(BaseModel):
         description="How well the actual work matches the roles in the profile.")
     company_tier: Literal["top", "strong", "standard"] = Field(
         description="Using the profile's definition of top tier.")
+    beats_current_offer: bool = Field(description="Would this internship beat the person's "
+                                      "current Summer offer, by the profile's rules (pay, resume "
+                                      "name, Florida, full-time conversion over $100k)?")
     blocked_category: bool = Field(description="The company falls into one of the excluded "
                                    "kinds of company.")
     pay: Optional[str] = Field(default=None, description='Pay if the posting states it, '

@@ -60,6 +60,8 @@ companies:
 
   # ------------------------------------------- healthcare and medtech
   - name: Epic Systems
+    # One year-round "Software Development Internship" (careers.epic.com/jobs/intern);
+    # nothing to track - apply directly.
     aliases: [Epic]
   - name: Garmin
     site: {type: jibe, host: careers.garmin.com}
@@ -160,6 +162,7 @@ companies:
   - name: Twilio
     site: {type: greenhouse, board: twilio}
   - name: HubSpot
+    site: {type: greenhouse, board: hubspotjobs}
   - name: Okta
     site: {type: greenhouse, board: okta}
   - name: Zoom
@@ -261,12 +264,14 @@ companies:
   # ------------------------------------------------------------ Florida
   - name: NextEra Energy
     aliases: [Florida Power & Light, FPL]
+    site: {type: successfactors, host: jobs.nexteraenergy.com}
   - name: Carrier
     aliases: [Carrier Global]
     site: {type: workday, host: carrier.wd5.myworkdayjobs.com, tenant: carrier, site: jobs}
   - name: Chewy
     site: {type: workday, host: chewy.wd5.myworkdayjobs.com, tenant: chewy, site: External}
   - name: UKG
+    site: {type: eightfold, host: apply.ukg.com, domain: ukg.com}
   - name: Cloud Software Group
     aliases: [Citrix]
   - name: Kaseya

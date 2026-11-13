@@ -16,10 +16,15 @@ want, too.
 
 - A **Fall 2027 co-op or internship** (roughly August-December 2027).
   Co-ops that span Fall 2027 count, e.g. "July-December 2027".
-- **Summer 2027** internships only at top-tier companies: big tech, top
-  AI labs, well-known high-paying tech companies (think NVIDIA, Stripe,
-  Google, Meta, Databricks, Anthropic). A great Summer 2027 offer could
-  lead to a full-time return offer.
+- **Summer 2027** internships only when they beat my current Summer 2027
+  offer, a software internship at Bank of America:
+  - better pay and/or a better resume name than Bank of America, e.g.
+    Intuit, Datadog, Stripe, Databricks, NVIDIA, Google, or well-known
+    software companies that pay interns more than a big bank does; or
+  - a company about as well known as Bank of America that pays more, or
+    whose role is in Florida.
+  - Most important: companies where the internship commonly converts to a
+    full-time offer paying over $100k base.
 - In the United States only (remote US is fine).
 
 ## Roles
@@ -58,8 +63,9 @@ Not a fit:
 
 ## How to judge "top tier"
 
-Top tier means the company pays interns very well (roughly $45+/hour)
-and/or is a name that clearly stands out on a resume - better than a
-large bank like Bank of America. Big tech, top AI companies, top
-unicorns and the best-known product companies are top tier. Large
+"Top tier" means a Summer 2027 internship there would beat a software
+internship at Bank of America (by the rules above): the company pays
+interns more than a large bank and/or has a stronger name in tech, and
+its new-grad software engineers typically earn over $100k base. Big tech, top AI companies, strong unicorns and
+well-known software/product companies are top tier. Large banks and
 established non-tech companies are usually "strong", not top tier.

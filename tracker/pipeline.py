@@ -185,7 +185,9 @@ def screen(conn, cfg, judge, log):
         tiers = _company_tiers(conn, judge, [p["company"] for p in tier_check], log)
         tiers = {simplify.normalize(k): v for k, v in tiers.items()}
         for p in tier_check:
-            if tiers.get(simplify.normalize(p["company"])) == "top":
+            tier = tiers.get(simplify.normalize(p["company"]))
+            # Florida roles at solid companies also count; the AI decides.
+            if tier == "top" or (tier == "strong" and rules.in_florida(p)):
                 to_judge.append(p)
             else:
                 db.update(conn, p["id"], status="skipped",
