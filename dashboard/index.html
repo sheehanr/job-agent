@@ -157,7 +157,16 @@ function ago(iso) {
 }
 
 function postedTime(r) {
-  return new Date(r.posted_at || r.first_seen).getTime();
+  return r.posted_at ? new Date(r.posted_at).getTime() : null;
+}
+
+// Sort by posting date; postings with no date always go last.
+function byPosted(dir) {
+  return (a, b) => {
+    const x = postedTime(a), y = postedTime(b);
+    if (x === null || y === null) return (x === null) - (y === null);
+    return dir * (x - y);
+  };
 }
 
 function postedLabel(r) {
@@ -253,11 +262,11 @@ function filtered() {
   rows = [...rows];
   const found = (r) => new Date(r.first_seen).getTime();
   const sorts = {
-    posted_desc: (a, b) => postedTime(b) - postedTime(a),
-    posted_asc: (a, b) => postedTime(a) - postedTime(b),
+    posted_desc: byPosted(-1),
+    posted_asc: byPosted(1),
     found_desc: (a, b) => found(b) - found(a),
     found_asc: (a, b) => found(a) - found(b),
-    tier: (a, b) => (TIER_RANK[a.tier] ?? 3) - (TIER_RANK[b.tier] ?? 3) || postedTime(b) - postedTime(a),
+    tier: (a, b) => (TIER_RANK[a.tier] ?? 3) - (TIER_RANK[b.tier] ?? 3) || byPosted(-1)(a, b),
   };
   rows.sort(sorts[state.sort] || sorts.posted_desc);
   return rows;
