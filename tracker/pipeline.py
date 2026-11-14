@@ -158,7 +158,7 @@ def _recent_feedback(conn, limit=25):
 
 
 def _recent_positive(conn, limit=25):
-    """Postings you applied to or marked "It fits" - examples of what you want."""
+    """Postings you applied to or marked Interested - examples of what you want."""
     return db.rows(conn, """
         select company, title from postings
         where user_status in ('applied', 'good_fit') and source <> 'legacy'

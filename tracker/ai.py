@@ -86,14 +86,14 @@ def _system_prompt(cfg, feedback, positive=()):
     ]
 
     if feedback:
-        lines += ["", "# Postings they marked as not a fit recently (learn from these)"]
+        lines += ["", "# Postings they marked as not interested recently (fewer like these)"]
         for f in feedback:
             why = f" - {f['feedback_reason']}" if f.get("feedback_reason") else ""
             what = "the company" if f.get("feedback_kind") == "company" else "the role"
             lines.append(f"- {f['company']}: {f['title']} (didn't like {what}){why}")
 
     if positive:
-        lines += ["", "# Postings they applied to or marked as a good fit recently (more like these)"]
+        lines += ["", "# Postings they applied to or marked as interested recently (more like these)"]
         for p in positive:
             lines.append(f"- {p['company']}: {p['title']}")
 

@@ -4,7 +4,7 @@ Phone notifications through ntfy (https://ntfy.sh).
 One notification per role ("Company - Role"); the same role in several
 locations shares one; a company with 2+ new roles in a run gets a single
 "Company - N new roles" notification. Tapping a single-role notification
-opens the apply link. Buttons send "not a fit" feedback to the dashboard,
+opens the apply link. Buttons send "not interested" feedback to the dashboard,
 which records it (and can be undone there).
 """
 

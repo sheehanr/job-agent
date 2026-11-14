@@ -1,7 +1,7 @@
 name: Send test notification
 
 # Run this from the Actions tab to send one real notification (your
-# current top match, with working "Not a fit" buttons) to your phone.
+# current top match, with working "Not interested" buttons) to your phone.
 on:
   workflow_dispatch:
 

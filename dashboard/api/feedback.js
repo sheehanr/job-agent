@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   if (!ok) return res.status(403).send("Bad signature");
   try {
     await setFeedback(ids, "not_fit", { kind });
-    res.status(200).send("Marked as not a fit. Undo it on the dashboard.");
+    res.status(200).send("Marked as not interested. Undo it on the dashboard.");
   } catch (e) {
     res.status(500).send("Couldn't save feedback");
   }

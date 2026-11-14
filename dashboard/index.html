@@ -67,7 +67,9 @@ nav.tabs .sep { flex: none; width: 1px; background: var(--line-strong); margin: 
 .badge.tier3 { background: var(--t3-soft); color: var(--t3); }
 .badge.warn { background: var(--warn-soft); color: var(--warn); }
 .badge.bad { background: var(--bad-soft); color: var(--bad); }
-.facts { color: var(--muted); font-size: 13px; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.facts { color: var(--muted); font-size: 13px; margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.facts > span { background: var(--chip); border-radius: 6px; padding: 2px 8px; white-space: nowrap;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .reason { margin-top: 8px; font-size: 14px; }
 .reason.muted { color: var(--muted); }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
@@ -181,6 +183,90 @@ function postedLabel(r) {
   const days = (Date.now() - new Date(r.posted_at)) / 86400000;
   const text = r.posted_approx ? `Posted ${Math.round(days)}+ days ago` : `Posted ${ago(r.posted_at)}`;
   return { text, old: days > 45 };
+}
+
+// ---- Location: every job site writes it differently ("USA - Pennsylvania -
+// West Point", "US, Arizona, Phoenix", "Boston, Massachusetts, USA").
+// Show "City, ST", at most two, and "+N" for the rest.
+const STATES = { alabama: "AL", alaska: "AK", arizona: "AZ", arkansas: "AR", california: "CA",
+  colorado: "CO", connecticut: "CT", delaware: "DE", "district of columbia": "DC", florida: "FL",
+  georgia: "GA", hawaii: "HI", idaho: "ID", illinois: "IL", indiana: "IN", iowa: "IA", kansas: "KS",
+  kentucky: "KY", louisiana: "LA", maine: "ME", maryland: "MD", massachusetts: "MA", michigan: "MI",
+  minnesota: "MN", mississippi: "MS", missouri: "MO", montana: "MT", nebraska: "NE", nevada: "NV",
+  "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+  "north carolina": "NC", "north dakota": "ND", ohio: "OH", oklahoma: "OK", oregon: "OR",
+  pennsylvania: "PA", "rhode island": "RI", "south carolina": "SC", "south dakota": "SD",
+  tennessee: "TN", texas: "TX", utah: "UT", vermont: "VT", virginia: "VA", washington: "WA",
+  "west virginia": "WV", wisconsin: "WI", wyoming: "WY", "puerto rico": "PR" };
+const STATE_CODES = new Set(Object.values(STATES));
+const COUNTRY_RE = /\b(united states of america|united states|usa|u\.s\.a?\.?)\b|(^|[\s,-])US(?=$|[\s,-])/gi;
+
+function shortPlace(raw) {
+  let s = String(raw || "").replace(/\(.*?\)/g, " ").trim();
+  if (!s) return "";
+  if (/remote/i.test(s)) return "Remote";
+  const hadUS = new RegExp(COUNTRY_RE.source, "i").test(s);
+  s = s.replace(COUNTRY_RE, " ");
+  // Split on commas and on spaced dashes (" - "), not on "In-Office".
+  const parts = s.split(/\s*,\s*|\s+[-–|]\s+/).map((x) => x.trim()).filter(Boolean);
+  let state = "", city = "";
+  for (const [i, part] of parts.entries()) {
+    const low = part.toLowerCase();
+    if (!state && STATES[low]) { state = STATES[low]; continue; }
+    // A two-letter code is a state right after the city, last ("Kingwood,
+    // Houston, TX"), or when the location says US - but not after another
+    // code ("Hyderabad, TS, IN" is India, not Indiana).
+    const afterCode = i > 0 && parts[i - 1].length === 2;
+    const isLast = i === parts.length - 1;
+    if (!state && part.length === 2 && STATE_CODES.has(part.toUpperCase()) &&
+        (i <= 1 || hadUS || (isLast && !afterCode))) {
+      state = part.toUpperCase(); continue;
+    }
+    const pre = part.match(/^([A-Z]{2})\s+(.+)$/);
+    if (!state && pre && STATE_CODES.has(pre[1])) { state = pre[1]; if (!city) city = pre[2]; continue; }
+    if (!city) city = part;
+  }
+  if (city && state) return `${city}, ${state}`;
+  if (state) return state;
+  return city || (hadUS ? "United States" : String(raw));
+}
+
+function placesOf(r) {
+  const all = (r.locations || []).flatMap((l) => String(l).split(/\s*;\s*/)).map(shortPlace).filter(Boolean);
+  return [...new Set(all)];
+}
+
+function locationChip(r) {
+  const places = placesOf(r);
+  if (!places.length) return `<span>Location not listed</span>`;
+  const shown = places.slice(0, 2).join(" · ") + (places.length > 2 ? ` +${places.length - 2}` : "");
+  return `<span title="${esc((r.locations || []).join("; "))}">${esc(shown)}</span>`;
+}
+
+// ---- Pay: postings give it per hour, week, month or year. Show it per
+// hour; converted amounts get a "~" and the original on hover.
+function payChip(raw) {
+  if (!raw) return "";
+  const text = String(raw);
+  if (!text.includes("$")) return `<span>${esc(text)}</span>`;
+  const nums = [...text.matchAll(/(\d[\d,]*(?:\.\d+)?)\s*(k)?\b/gi)]
+    .map((m) => parseFloat(m[1].replace(/,/g, "")) * (m[2] ? 1000 : 1)).filter((n) => n > 0);
+  if (!nums.length) return `<span>${esc(text)}</span>`;
+  const t = text.toLowerCase();
+  let per = /\b(hr|hour|hourly)\b/.test(t) ? 1
+    : /\b(week|weekly|wk)\b/.test(t) ? 40
+    : /\b(month|monthly|mo)\b/.test(t) ? 2080 / 12
+    : /\b(yr|year|yearly|annual|annually|salary)\b/.test(t) ? 2080
+    : /stipend|once|bonus/.test(t) ? null : 0;
+  if (per === null) return `<span>${esc(text)}</span>`;
+  if (per === 0) {
+    const top = Math.max(...nums);
+    per = top < 300 ? 1 : top < 25000 ? 2080 / 12 : 2080;
+  }
+  const hourly = nums.slice(0, 2).map((n) => Math.round(n / per));
+  const range = hourly.length > 1 && hourly[0] !== hourly[1] ? `$${hourly[0]}–${hourly[1]}` : `$${hourly[0]}`;
+  return per === 1 ? `<span>${range}/hr</span>`
+    : `<span title="Converted to hourly from: ${esc(text)}">~${range}/hr</span>`;
 }
 
 const SEASONS = { Winter: 0, Spring: 1, Summer: 2, Fall: 3 };
@@ -304,30 +390,29 @@ function card(r) {
     r.description_status === "unavailable" ? `<span class="badge warn" title="Couldn't read the description; judged from the title">Unverified</span>` : "",
     !r.active ? `<span class="badge bad">Closed</span>` : "",
     r.baseline ? "" : `<span class="badge">New</span>`].join("");
-  const locs = (r.locations || []).filter(Boolean);
   const posted = postedLabel(r);
   const facts = [
-    locs.length ? esc(locs.slice(0, 3).join("; ") + (locs.length > 3 ? ` +${locs.length - 3}` : "")) : "Location not listed",
-    esc(termOf(r)),
-    j.pay ? esc(j.pay) : "",
+    locationChip(r),
+    `<span>${esc(termOf(r))}</span>`,
+    payChip(j.pay),
     `<span class="${posted.old ? "old" : ""}" title="When the company posted it">${posted.text}</span>`,
-    `via ${r.source === "simplify" ? "Simplify" : "company site"}`,
-  ].filter(Boolean).map((f) => f.startsWith("<span") ? f : `<span>${f}</span>`).join("");
+    `<span>via ${r.source === "simplify" ? "Simplify" : "company site"}</span>`,
+  ].filter(Boolean).join("");
   const reason = j.final_reason || j.reason || "";
   const fbNote = r.user_status === "not_fit"
     ? `<div class="note">Not interested: the ${r.feedback_kind === "company" ? "company" : "role"}${r.feedback_reason ? ` - ${esc(r.feedback_reason)}` : ""}</div>` : "";
   const applied = r.user_status === "applied" ? `<div class="note">Applied ${ago(r.applied_at)}</div>`
-    : r.user_status === "good_fit" ? `<div class="note">You marked this as a fit (the AI had turned it down)</div>`
+    : r.user_status === "good_fit" ? `<div class="note">You marked this as interested (the AI had turned it down)</div>`
     : r.user_status === "skipped" ? `<div class="note">Archived ${ago(r.feedback_at)}</div>` : "";
 
   const openBtn = (primary) =>
     `<a class="btn ${primary ? "primary" : ""}" href="${esc(r.url)}" target="_blank" rel="noopener">Open posting</a>`;
   let actions;
   if (!r.user_status && r.verdict === "skip") {
-    // Turned down by the AI: you can apply anyway, say it fits, or clear it.
+    // Turned down by the AI: you can apply anyway, mark it Interested, or archive it.
     actions = `${openBtn(true)}
       <button class="btn" data-act="applied">Applied</button>
-      <button class="btn" data-act="goodfit">It fits</button>
+      <button class="btn" data-act="goodfit">Interested</button>
       <button class="btn" data-act="skip">Archive</button>`;
   } else if (!r.user_status) {
     actions = `${openBtn(true)}
@@ -372,7 +457,7 @@ function renderList() {
     maybe: "Borderline postings: worth a look, not worth a notification. Archive clears one.",
     applied: "Postings you marked as applied. The AI treats these as examples of what you want.",
     not_fit: "Postings you marked as not interested. These teach the AI what to skip.",
-    skipped: "Postings the AI read and turned down, with its reason. If it got one wrong, mark it It fits (or Applied) - both teach the AI what you want. Archive clears one without teaching it anything.",
+    skipped: "Postings the AI read and turned down, with its reason. If it got one wrong, mark it Interested (or Applied) - both teach the AI what you want. Archive clears one without teaching it anything.",
     archive: "Postings you cleared without applying. The AI never sees these; Undo puts one back.",
   }[state.tab];
   $("#body").innerHTML = `
@@ -439,7 +524,7 @@ async function act(id, action, el) {
       moved(r, { user_status: "skipped", feedback_at: new Date().toISOString() }, "Moved to Archive");
     } else if (action === "goodfit") {
       await api("/api/act", { method: "POST", body: { ids: [id], action: "good_fit" } });
-      moved(r, { user_status: "good_fit", feedback_at: new Date().toISOString() }, "Marked as a fit - moved to Matches");
+      moved(r, { user_status: "good_fit", feedback_at: new Date().toISOString() }, "Marked as interested - moved to Matches");
     } else if (action === "save") {
       const reason = el.querySelector(".fb input").value.trim();
       if (r.user_status === "not_fit") {

@@ -5,8 +5,9 @@
 target_terms:
   - Fall 2027
 
-# Terms that only alert for top-tier companies (better pay or resume name
-# than your current offer). Leave empty to ignore these terms entirely.
+# Terms that only alert at Tier 1 and Tier 2 companies (profile.md,
+# "Company tiers"), i.e. roles that beat your current offer. Leave empty to
+# ignore these terms entirely.
 top_tier_only_terms:
   - Summer 2027
 

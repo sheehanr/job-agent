@@ -95,7 +95,7 @@ export async function setFeedback(ids, action, { kind = null, reason = null } = 
     // Neutral: out of the way, and never shown to the AI.
     patch = { user_status: "skipped", feedback_kind: null, feedback_reason: null, feedback_at: now };
   } else if (action === "good_fit") {
-    // The AI turned it down but you think it fits: a positive example.
+    // "Interested": the AI turned it down but you want it - a positive example.
     patch = { user_status: "good_fit", feedback_kind: null, feedback_reason: null, feedback_at: now };
   } else if (action === "reason") {
     patch = { feedback_reason: reason };
@@ -114,7 +114,7 @@ export async function setFeedback(ids, action, { kind = null, reason = null } = 
 // The dashboard's lists. Matches, Maybe and Skipped by AI are the AI's
 // inbox; the rest are where reviewed postings end up.
 export const VIEWS = {
-  // AI matches you haven't acted on, plus postings you marked "It fits".
+  // AI matches you haven't acted on, plus postings you marked Interested.
   matches: "status=eq.judged&or=(and(verdict.eq.alert,user_status.is.null),user_status.eq.good_fit)",
   maybe: "status=eq.judged&verdict=eq.maybe&user_status=is.null",
   skipped: "status=eq.judged&verdict=eq.skip&user_status=is.null",

@@ -34,19 +34,26 @@ Company sites ─────┘   (US, term,                (job-site APIs)    
    the US, not a tech role, graduate-students only, the wrong term, or a
    blocked company.
 3. **Dedupe.** A role found on both a company site and Simplify is judged
-   once.
-4. **AI judge.** Fetches the full job description and has Gemini fill in a
+   once (same apply link, or near-identical title at the same company).
+4. **Company tiers.** Every company gets one tier, 1-3 (see "Company tiers"
+   in `profile.md`): your pin in `companies.yaml` if you set one, otherwise
+   an AI rating made once per company and cached.
+5. **AI judge.** Fetches the full job description and has Gemini fill in a
    structured judgment: internship or not, term, undergrad eligibility, US
-   location, role fit, company tier, pay, verdict (alert / maybe / skip) and
-   a one-line reason. Your settings are then applied to that judgment (for
-   example, Summer 2027 roles only count at top-tier companies).
-5. **Notify.** Each match becomes an ntfy notification titled
+   location, role fit, pay, whether it beats your current offer, verdict
+   (alert / maybe / skip) and a one-line reason. It also sees your recent
+   Applied / Interested postings (more like these) and Not interested ones
+   (fewer like these). Your settings are then applied to that judgment (for
+   example, Summer 2027 roles only count at Tier 1 and Tier 2 companies).
+6. **Notify.** Each match becomes an ntfy notification titled
    "Company - Role", with the apply link and location. Tapping it opens the
    posting; the **Not interested: role** and **Not interested: company** buttons
    record feedback the AI sees on later runs.
-6. **Coverage.** For postings found on company sites, the tracker records
+7. **Coverage.** For postings found on company sites, the tracker records
    whether Simplify also listed them and how many hours later, so you can see
-   which direct checks are worth keeping.
+   which direct checks are worth keeping. Posting dates come from the job
+   site (or Simplify when the site gives none); dates from evergreen postings
+   reused for years are treated as unknown.
 
 The first time a source is checked, everything it already lists is saved as
 "baseline": judged and shown on the dashboard, but never notified.
@@ -57,11 +64,12 @@ The first time a source is checked, everything it already lists is saved as
 |---|---|
 | `profile.md` | What you want, in plain English. The AI reads it for every posting. |
 | `settings.yaml` | Target terms, AI model, notifications on/off, dashboard link. |
-| `companies.yaml` | Companies on your radar, and which ones to check directly. |
+| `companies.yaml` | Companies on your radar, which ones to check directly, and tier pins. |
 | `blocklist.yaml` | Companies that never alert, and kinds of company the AI should skip. |
 
 **Terms.** `target_terms` (e.g. `Fall 2027`) alert at the normal bar.
-`top_tier_only_terms` (e.g. `Summer 2027`) alert only at top-tier companies.
+`top_tier_only_terms` (e.g. `Summer 2027`) alert only at Tier 1 and Tier 2
+companies.
 Postings with no term listed go through, and the AI reads the dates from the
 description.
 
@@ -77,6 +85,9 @@ into `companies.yaml`. Companies with custom-built, bot-protected careers
 sites (Google, Meta, Apple, Microsoft, Amazon, Tesla, ...) are left without
 a `site` and come through Simplify only.
 
+**Tiers.** The AI rates each company once. If you disagree, pin it in
+`companies.yaml` with `tier: 1`, `2` or `3`; pins always win.
+
 **Shadow mode.** With `notifications.enabled: false`, everything runs and
 fills the dashboard, but nothing is pushed to your phone.
 
@@ -91,10 +102,12 @@ fills the dashboard, but nothing is pushed to your phone.
     things like it.
   - **Archive** - cleared without teaching the AI anything.
 
-  On *Skipped by AI*, **It fits** moves a posting the AI turned down into
+  On *Skipped by AI*, **Interested** moves a posting the AI turned down into
   Matches and counts as an example of what you want. Every action has an
-  **Undo**. *Tracker status* (top right) shows how Simplify compares with
-  the direct checks, and recent runs.
+  **Undo**. Cards show the company's tier, a short location, pay per hour
+  (converted from weekly/monthly/yearly, marked "~"), and when the job was
+  posted. *Tracker status* (top right) shows how Simplify compares with the
+  direct checks, and recent runs.
 
 ## Setup (for your own copy)
 
@@ -167,7 +180,8 @@ tracker/             the tracker: pipeline, rules, AI, notifications
 tracker/sources/     one adapter per job site, plus Simplify
 dashboard/           the website (static page + Vercel server functions)
 db/schema.sql        database tables
-scripts/             finding a company's job site, scheduler setup
+scripts/             finding a company's job site, DB and scheduler setup,
+                     test notification, model comparison
 tests/               unit tests
 ```
 

@@ -1,6 +1,6 @@
 """
 Send one real notification for your current top match, with working
-"Not a fit" buttons, to check the phone side end to end. Anything you tap
+"Not interested" buttons, to check the phone side end to end. Anything you tap
 can be undone on the dashboard.
 
     python scripts/test_notification.py
