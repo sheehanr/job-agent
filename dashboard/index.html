@@ -272,7 +272,9 @@ function filtered() {
     found_asc: (a, b) => found(a) - found(b),
     tier: (a, b) => (TIER_RANK[a.tier] ?? 3) - (TIER_RANK[b.tier] ?? 3) || byPosted(-1)(a, b),
   };
-  rows.sort(sorts[state.sort] || sorts.posted_desc);
+  const order = sorts[state.sort] || sorts.posted_desc;
+  // Closed postings always go to the bottom, whatever the sort.
+  rows.sort((a, b) => (a.active === false) - (b.active === false) || order(a, b));
   return rows;
 }
 
