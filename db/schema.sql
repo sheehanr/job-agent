@@ -39,7 +39,7 @@ create table if not exists postings (
   notified_at        timestamptz,
 
   -- you
-  user_status        text,                     -- applied | not_fit
+  user_status        text,                     -- applied | not_fit | good_fit | skipped
   feedback_kind      text,                     -- role | company
   feedback_reason    text,
   feedback_at        timestamptz,

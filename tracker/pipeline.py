@@ -157,6 +157,14 @@ def _recent_feedback(conn, limit=25):
         where user_status = 'not_fit' order by feedback_at desc limit %s""", (limit,))
 
 
+def _recent_positive(conn, limit=25):
+    """Postings you applied to or marked "It fits" - examples of what you want."""
+    return db.rows(conn, """
+        select company, title from postings
+        where user_status in ('applied', 'good_fit') and source <> 'legacy'
+        order by coalesce(applied_at, feedback_at) desc nulls last limit %s""", (limit,))
+
+
 def _find_duplicate(conn, p, days):
     since = _now() - timedelta(days=days)
     for other in db.rows(conn, """
@@ -393,7 +401,7 @@ def run(cfg, log=print):
             summary["new_postings"] = len(store(conn, cfg, found, log))
             conn.commit()
 
-            judge = Judge(cfg, _recent_feedback(conn))
+            judge = Judge(cfg, _recent_feedback(conn), _recent_positive(conn))
             summary.update(screen(conn, cfg, judge, log))
             summary["ai_usage"] = judge.usage
             conn.commit()

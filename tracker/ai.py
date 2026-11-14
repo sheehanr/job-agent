@@ -60,7 +60,7 @@ class CompanyTiers(BaseModel):
     companies: list[CompanyTier]
 
 
-def _system_prompt(cfg, feedback):
+def _system_prompt(cfg, feedback, positive=()):
 
     liked = ", ".join(c.name for c in cfg.companies if c.tier != 3)
     blocked = "\n".join(f"- {c}" for c in cfg.blocked_categories)
@@ -91,6 +91,11 @@ def _system_prompt(cfg, feedback):
             why = f" - {f['feedback_reason']}" if f.get("feedback_reason") else ""
             what = "the company" if f.get("feedback_kind") == "company" else "the role"
             lines.append(f"- {f['company']}: {f['title']} (didn't like {what}){why}")
+
+    if positive:
+        lines += ["", "# Postings they applied to or marked as a good fit recently (more like these)"]
+        for p in positive:
+            lines.append(f"- {p['company']}: {p['title']}")
 
     lines += ["", "If no description is provided, judge from the title and company only, "
               "and prefer 'maybe' over 'alert' when unsure."]
@@ -184,13 +189,13 @@ PROVIDERS = {"gemini-vertex": GeminiVertex}
 class Judge:
     """Judges postings and rates companies, with token usage tracked."""
 
-    def __init__(self, cfg, feedback=()):
+    def __init__(self, cfg, feedback=(), positive=()):
 
         ai_settings = cfg.settings.get("ai") or {}
         provider = ai_settings.get("provider", "gemini-vertex")
         self.backend = PROVIDERS[provider](ai_settings)
         self.model = f"{provider}:{ai_settings.get('model')}"
-        self.system = _system_prompt(cfg, list(feedback))
+        self.system = _system_prompt(cfg, list(feedback), list(positive))
         self.usage = {"calls": 0, "input": 0, "output": 0, "thinking": 0}
 
     def _count(self, usage):

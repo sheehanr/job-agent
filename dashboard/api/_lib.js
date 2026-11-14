@@ -91,6 +91,12 @@ export async function setFeedback(ids, action, { kind = null, reason = null } = 
     patch = { user_status: "applied", applied_at: now };
   } else if (action === "not_fit") {
     patch = { user_status: "not_fit", feedback_kind: kind, feedback_reason: reason, feedback_at: now };
+  } else if (action === "skip") {
+    // Neutral: out of the way, and never shown to the AI.
+    patch = { user_status: "skipped", feedback_kind: null, feedback_reason: null, feedback_at: now };
+  } else if (action === "good_fit") {
+    // The AI turned it down but you think it fits: a positive example.
+    patch = { user_status: "good_fit", feedback_kind: null, feedback_reason: null, feedback_at: now };
   } else if (action === "reason") {
     patch = { feedback_reason: reason };
   } else if (action === "undo") {
