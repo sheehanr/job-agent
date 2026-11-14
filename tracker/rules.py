@@ -111,6 +111,30 @@ def pre_ai(posting, cfg):
     return None
 
 
+_PAGE_TITLE_RE = re.compile(r"^Posting page title:\s*(.+)$", re.M)
+
+
+def title_says_internship(posting):
+    """
+    Whether the posting's own title says intern/co-op. For Simplify
+    listings the title is Simplify's, so it only counts if the company's
+    page title (when we have it) agrees - that's how a full-time role
+    mislabeled as an internship gets caught.
+    """
+
+    if not is_internship(posting.get("title")):
+        return False
+    if posting.get("source") != "simplify":
+        return True
+    page = _PAGE_TITLE_RE.search(posting.get("description") or "")
+    return not page or is_internship(page.group(1))
+
+
+def _terms_text(terms):
+    terms = [t for t in terms if t and t.upper() != "N/A"]
+    return ", ".join(terms) or "no term listed"
+
+
 def final_verdict(posting, judgment, cfg):
     """
     Apply your settings to the AI's reading of the posting. Returns
@@ -122,7 +146,10 @@ def final_verdict(posting, judgment, cfg):
 
     if j.get("blocked_category"):
         return "skip", "excluded kind of company"
-    if not j.get("is_internship", True):
+    # An intern title wins over the AI's "not an internship" (it reads
+    # part-time or 6-month internships as jobs); then the AI's own verdict
+    # and reason - about the work - decide.
+    if not j.get("is_internship", True) and not title_says_internship(posting):
         return "skip", "not an internship or co-op"
     if j.get("undergrad_eligible") is False:
         return "skip", "not open to undergrads"
@@ -130,14 +157,13 @@ def final_verdict(posting, judgment, cfg):
         return "skip", "not in the US"
 
     terms = all_terms(posting)
-    ai_term = (j.get("term") or "").strip()
-    if ai_term and ai_term.lower() not in ("unspecified", "unknown"):
-        terms = list(dict.fromkeys(terms + (terms_in(ai_term) or [ai_term])))
+    # Only real seasons count; "2027", "immediate" or "rolling" are unknown.
+    terms = list(dict.fromkeys(terms + terms_in(j.get("term") or "")))
     status = term_status(terms, settings)
 
     if status == "other":
-        return "skip", f"term: {', '.join(terms)}"
+        return "skip", f"only for {_terms_text(terms)}, not a term you're targeting"
     if status == "top_only" and not j.get("beats_current_offer", posting.get("tier") in (1, 2)):
-        return "skip", f"{ai_term or terms[0]} role that doesn't beat your current offer"
+        return "skip", f"{_terms_text(terms)} role that doesn't beat your current offer"
 
     return j.get("verdict") or "skip", j.get("reason") or ""

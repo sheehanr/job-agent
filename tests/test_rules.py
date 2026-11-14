@@ -78,7 +78,9 @@ def judgment(**kw):
 def test_final_verdict(cfg):
     p = simplify(terms=[])
     assert rules.final_verdict(p, judgment(), cfg) == ("alert", "Backend SWE; strong fit")
-    assert rules.final_verdict(p, judgment(is_internship=False), cfg)[0] == "skip"
+    # An intern title overrules the AI's "not an internship" (no page title says otherwise).
+    assert rules.final_verdict(p, judgment(is_internship=False), cfg)[0] == "alert"
+    assert rules.final_verdict({**p, "title": "Data Scientist"}, judgment(is_internship=False), cfg)[0] == "skip"
     assert rules.final_verdict(p, judgment(undergrad_eligible=False), cfg)[0] == "skip"
     assert rules.final_verdict(p, judgment(blocked_category=True), cfg)[0] == "skip"
     # Summer 2027 only counts when it beats the current offer...
@@ -90,3 +92,23 @@ def test_final_verdict(cfg):
     # A co-op spanning summer and fall counts.
     assert rules.final_verdict(p, judgment(term="Summer 2027, Fall 2027"), cfg)[0] == "alert"
     assert rules.final_verdict(p, judgment(term="Spring 2027"), cfg)[0] == "skip"
+
+
+def test_intern_title_beats_ai_not_internship(cfg):
+    # Company-site posting titled "Intern": the AI's "not an internship"
+    # is overruled, and its own verdict/reason decide.
+    p = simplify(source="workday", title="Failure Analysis Technician - 6 Month Intern 2027", terms=[])
+    j = judgment(is_internship=False, verdict="skip", reason="Lab work, no software")
+    assert rules.final_verdict(p, j, cfg) == ("skip", "Lab work, no software")
+    # Simplify listing whose company page title isn't an internship: AI stands.
+    ms = simplify(title="Data Scientist Intern - CoreAI", terms=[],
+                  description="Posting page title: Data Scientist, CoreAI\nEmployment type: FULL_TIME")
+    assert rules.final_verdict(ms, judgment(is_internship=False), cfg)[0] == "skip"
+
+
+def test_year_only_term_is_unknown(cfg):
+    p = simplify(terms=["N/A"])
+    assert rules.final_verdict(p, judgment(term="2027", verdict="maybe"), cfg)[0] == "maybe"
+    assert rules.final_verdict(p, judgment(term="Spring 2027, Summer 2027, Fall 2027"), cfg)[0] == "alert"
+    reason = rules.final_verdict(p, judgment(term="Spring 2027"), cfg)[1]
+    assert "N/A" not in reason and "Spring 2027" in reason

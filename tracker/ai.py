@@ -24,12 +24,16 @@ class Judgment(BaseModel):
                                      "students, e.g. 'currently pursuing a degree', 'summer intern "
                                      "program'. Empty string if the description has none.")
     is_internship: bool = Field(description="An internship or co-op for current students "
-                                "(not full-time, new-grad, contract or apprenticeship). If a "
-                                "description is provided and internship_evidence is empty, "
-                                "this is false.")
+                                "(not full-time, new-grad, contract or apprenticeship). A "
+                                "posting whose own title says intern/co-op IS an internship - "
+                                "including part-time, 6-month and immediate-start ones - unless "
+                                "the description or the posting page's title clearly describe a "
+                                "regular full-time or new-grad job. Missing student wording alone "
+                                "doesn't make it not an internship.")
     term: str = Field(description='Season and year the role runs, e.g. "Fall 2027", '
                       '"Summer 2027", "Spring 2027". For a co-op spanning several seasons, '
-                      'list each, e.g. "Summer 2027, Fall 2027". "Unspecified" if not stated.')
+                      'list each, e.g. "Summer 2027, Fall 2027". "Unspecified" if no season is '
+                      'stated (including immediate, rolling or year-only starts like "2027").')
     undergrad_eligible: bool = Field(description="Open to undergraduate (Bachelor's) students. "
                                      "False if it requires being in a Master's, PhD or MBA program.")
     us_location: bool = Field(description="Can be done from at least one US location "
@@ -44,10 +48,15 @@ class Judgment(BaseModel):
     pay: Optional[str] = Field(default=None, description='Pay if the posting states it, '
                                'e.g. "$45-55/hr". Null if not stated.')
     verdict: Literal["alert", "maybe", "skip"] = Field(
-        description="alert = a good match worth a phone notification; maybe = borderline; "
-        "skip = not a fit.")
-    reason: str = Field(description="One short line (max ~15 words) on what the role is and "
-                        "why it fits or doesn't, e.g. 'Backend SWE on payments infra; strong fit'.")
+        description="alert = a good match worth a phone notification; maybe = borderline or "
+        "worth a look; skip = not a fit. An unspecified, rolling or immediate start is NOT a "
+        "reason to skip: if the role and company fit, use maybe (or alert if Fall 2027 looks "
+        "possible). A good role at a Tier 1 or Tier 2 company is at least maybe unless it's "
+        "clearly ineligible or clearly only for a term they don't want.")
+    reason: str = Field(description="One short line (max ~15 words) giving the real deciding "
+                        "factor - the work, the company, eligibility or a clearly unwanted term - "
+                        "e.g. 'Backend SWE on payments infra; strong fit' or 'Lab failure "
+                        "analysis, no software work'. Don't cite an unclear term as the reason.")
 
 
 class CompanyTier(BaseModel):
