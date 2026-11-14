@@ -33,7 +33,7 @@ create table if not exists postings (
   description_status text,                     -- ok | unavailable
   judgment           jsonb,
   verdict            text,                     -- alert | maybe | skip
-  tier               text,                     -- top | strong | standard
+  tier               smallint,                 -- company tier 1-3 (profile.md, "Company tiers")
   ai_model           text,
   judged_at          timestamptz,
   notified_at        timestamptz,
@@ -96,3 +96,12 @@ revoke all on postings, runs, meta, coverage from anon, authenticated;
 
 -- Added after launch.
 alter table postings add column if not exists posted_approx boolean not null default false;
+
+-- Tiers changed from top/strong/standard text to numbers 1-3 (old values
+-- are dropped; postings are re-tiered from meta.company_tiers).
+do $$ begin
+  if (select data_type from information_schema.columns
+      where table_name = 'postings' and column_name = 'tier') = 'text' then
+    alter table postings alter column tier type smallint using null;
+  end if;
+end $$;

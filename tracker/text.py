@@ -121,3 +121,18 @@ def same_role(title_a, title_b, threshold=0.85):
         return True
 
     return difflib.SequenceMatcher(None, a, b).ratio() >= threshold
+
+
+def _link_tail(url):
+    return (url or "").split("?")[0].split("#")[0].rstrip("/").rsplit("/", 1)[-1].lower()
+
+
+def same_link(url_a, url_b):
+    """
+    Whether two apply links point at the same job posting: same last path
+    segment, and that segment contains a digit (a job id like "JR123456" or
+    "5438311008", not a generic word like "apply").
+    """
+
+    a, b = _link_tail(url_a), _link_tail(url_b)
+    return len(a) > 6 and any(ch.isdigit() for ch in a) and a == b

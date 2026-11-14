@@ -20,7 +20,7 @@ def main():
         row = conn.execute("""
             select * from postings where status = 'judged' and verdict = 'alert'
               and user_status is null and active and source <> 'legacy'
-            order by (tier = 'top') desc, first_seen desc limit 1""").fetchone()
+            order by tier nulls last, first_seen desc limit 1""").fetchone()
     if not row:
         print("No matches yet.")
         return

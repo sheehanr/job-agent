@@ -46,7 +46,7 @@ def grad_only(title, degrees):
 def term_status(terms, settings):
     """
     "target"    - a term you're applying for
-    "top_only"  - a term that only counts for top-tier companies
+    "top_only"  - a term that only counts at Tier 1 and Tier 2 companies
     "unknown"   - no term listed (the AI will look in the description)
     "other"     - only terms you're not applying for
     """
@@ -62,13 +62,6 @@ def term_status(terms, settings):
     if any(t in top_only for t in terms):
         return "top_only"
     return "other"
-
-
-_FLORIDA_RE = re.compile(r"\bFL\b|\bFlorida\b", re.I)
-
-
-def in_florida(posting):
-    return any(_FLORIDA_RE.search(l or "") for l in posting.get("locations") or [])
 
 
 def all_terms(posting):
@@ -144,7 +137,7 @@ def final_verdict(posting, judgment, cfg):
 
     if status == "other":
         return "skip", f"term: {', '.join(terms)}"
-    if status == "top_only" and not j.get("beats_current_offer", j.get("company_tier") == "top"):
+    if status == "top_only" and not j.get("beats_current_offer", posting.get("tier") in (1, 2)):
         return "skip", f"{ai_term or terms[0]} role that doesn't beat your current offer"
 
     return j.get("verdict") or "skip", j.get("reason") or ""

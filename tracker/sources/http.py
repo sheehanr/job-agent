@@ -72,3 +72,28 @@ def posted_date(value):
         return None, False
 
     return (parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)), False
+
+
+
+def plausible_posted(posted_at, title, terms=()):
+    """
+    None if a company site's posting date can't be trusted, else the date.
+
+    Some companies keep one evergreen posting open for years and just
+    rename it each cycle (Databricks' "Software Engineering Intern (2027)"
+    was first published in 2023), so the "published" date says nothing
+    about this year's role. A date more than a year before the earliest
+    year the posting mentions, or more than two years old, is treated as
+    unknown rather than shown as a misleading age.
+    """
+
+    from datetime import datetime, timedelta, timezone
+
+    if posted_at is None:
+        return None
+    if posted_at < datetime.now(timezone.utc) - timedelta(days=730):
+        return None
+    years = [int(y) for y in re.findall(r"\b(20\d\d)\b", " ".join([title or "", *terms]))]
+    if years and posted_at.year < min(years) - 1:
+        return None
+    return posted_at

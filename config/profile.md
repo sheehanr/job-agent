@@ -21,10 +21,11 @@ want, too.
   - better pay and/or a better resume name than Bank of America, e.g.
     Intuit, Datadog, Stripe, Databricks, NVIDIA, Google, or well-known
     software companies that pay interns more than a big bank does; or
-  - a company about as well known as Bank of America that pays more, or
-    whose role is in Florida.
+  - a company about as well known as Bank of America that pays more.
   - Most important: companies where the internship commonly converts to a
     full-time offer paying over $100k base.
+- For Fall 2027 co-ops, a Florida location is a plus but not required.
+  I'll take a good co-op anywhere in the US.
 - In the United States only (remote US is fine).
 
 ## Roles
@@ -61,11 +62,23 @@ Not a fit:
 - Never: defense contractors or weapons, quant/HFT firms, gambling,
   alcohol/tobacco, crypto exchanges, payday or buy-now-pay-later lenders.
 
-## How to judge "top tier"
+## Company tiers
 
-"Top tier" means a Summer 2027 internship there would beat a software
-internship at Bank of America (by the rules above): the company pays
-interns more than a large bank and/or has a stronger name in tech, and
-its new-grad software engineers typically earn over $100k base. Big tech, top AI companies, strong unicorns and
-well-known software/product companies are top tier. Large banks and
-established non-tech companies are usually "strong", not top tier.
+Every company gets one tier, based on its software engineering name
+recognition and new-grad pay:
+
+- **Tier 1**: big tech and top-of-market companies, with top SWE name
+  recognition and new-grad pay around $150k+ base. E.g. Google, Meta,
+  Netflix, Databricks, Stripe, Ramp, Figma, Notion, Rippling, top AI labs.
+  Companies with household-name recognition in tech (e.g. Tesla, SpaceX)
+  are Tier 1 even if their new-grad pay is a bit lower.
+- **Tier 2**: well-known tech companies with good SWE name recognition
+  and solid new-grad pay (about $110-150k base). E.g. Qualcomm, Workday,
+  Cohesity, Expedia, F5, Adobe.
+- **Tier 3**: companies about at Bank of America's level or below for SWE
+  pay and name: banks, card issuers, exchanges, established non-tech
+  companies.
+
+When unsure between two tiers, pick the lower one. High posted intern pay
+alone doesn't make a company Tier 1. A Summer 2027 internship only beats
+my Bank of America offer at a Tier 1 or Tier 2 company.

@@ -25,7 +25,7 @@ from tracker.describe import describe
 from tracker.location import UNKNOWN, classify_location
 from tracker.sources import fetch_company, simplify
 from tracker.sources.http import session
-from tracker.text import same_role, title_key
+from tracker.text import same_link, same_role, title_key
 
 # Baseline postings with no term are only judged if posted this recently;
 # older ones are almost always stale listings.
@@ -129,18 +129,26 @@ def store(conn, cfg, found, log):
     return new_ids
 
 
-def _company_tiers(conn, judge, names, log):
+def company_tiers(conn, cfg, judge, names, log):
+    """
+    {normalised company name: tier 1-3 or None} for these companies. One
+    tier per company: your pin in companies.yaml if there is one, else the
+    AI's rating, which is made once and cached in meta.company_tiers.
+    """
 
-    cache = db.get_meta(conn, "company_tiers", {}) or {}
-    known = {simplify.normalize(k) for k in cache}
-    missing = sorted({n for n in names if simplify.normalize(n) not in known})
+    cache = {k: v for k, v in (db.get_meta(conn, "company_tiers", {}) or {}).items()
+             if v in (1, 2, 3)}
+    missing = sorted({n for n in names
+                      if cfg.pinned_tier(n) is None and simplify.normalize(n) not in cache})
 
     if missing:
-        log(f"Rating {len(missing)} companies for top-tier-only terms")
-        cache.update(judge.company_tiers(missing))
+        log(f"Rating {len(missing)} companies")
+        for name, tier in judge.company_tiers(missing).items():
+            cache[simplify.normalize(name)] = tier
         db.set_meta(conn, "company_tiers", cache)
 
-    return cache
+    return {simplify.normalize(n): cfg.pinned_tier(n) or cache.get(simplify.normalize(n))
+            for n in names}
 
 
 def _recent_feedback(conn, limit=25):
@@ -152,13 +160,25 @@ def _recent_feedback(conn, limit=25):
 def _find_duplicate(conn, p, days):
     since = _now() - timedelta(days=days)
     for other in db.rows(conn, """
-            select id, title from postings
+            select id, title, url from postings
             where company_key = %s and status = 'judged' and id <> %s and first_seen >= %s
               and source <> 'legacy'
             order by first_seen""", (p["company_key"], p["id"], since)):
-        if same_role(p["title"], other["title"]):
+        if _same_posting(p, other):
             return other["id"]
     return None
+
+
+def _same_posting(a, b):
+    """
+    Same job: identical apply link (a company-site posting and its Simplify
+    listing usually share it, even when the titles are worded differently),
+    or near-identical titles. Titles are deliberately strict, so different
+    roles at one company (e.g. Qualcomm's Embedded vs ML internships) stay
+    separate.
+    """
+
+    return same_link(a.get("url"), b.get("url")) or same_role(a["title"], b["title"])
 
 
 def screen(conn, cfg, judge, log):
@@ -191,18 +211,19 @@ def screen(conn, cfg, judge, log):
         else:
             to_judge.append(p)
 
-    if tier_check:
-        tiers = _company_tiers(conn, judge, [p["company"] for p in tier_check], log)
-        tiers = {simplify.normalize(k): v for k, v in tiers.items()}
-        for p in tier_check:
-            tier = tiers.get(simplify.normalize(p["company"]))
-            # Florida roles at solid companies also count; the AI decides.
-            if tier == "top" or (tier == "strong" and rules.in_florida(p)):
-                to_judge.append(p)
-            else:
-                db.update(conn, p["id"], status="skipped",
-                          skip_reason="top-tier-only term at a company that isn't top tier")
-                skipped += 1
+    # One tier per company, used for the Summer gate and stored on every
+    # posting the AI judges.
+    tiers = company_tiers(conn, cfg, judge, [p["company"] for p in tier_check + to_judge], log)
+    for p in tier_check + to_judge:
+        p["tier"] = tiers.get(simplify.normalize(p["company"]))
+
+    for p in tier_check:
+        if p["tier"] in (1, 2):
+            to_judge.append(p)
+        else:
+            db.update(conn, p["id"], status="skipped", tier=p["tier"],
+                      skip_reason="top-tier-only term at a Tier 3 company")
+            skipped += 1
 
     # Dedupe in order (company sites first), so a role found on both a
     # company's site and Simplify is judged once.
@@ -213,7 +234,7 @@ def screen(conn, cfg, judge, log):
         dup = _find_duplicate(conn, p, dedupe_days)
         if not dup:
             for q in seen_in_batch:
-                if q["company_key"] == p["company_key"] and same_role(p["title"], q["title"]):
+                if q["company_key"] == p["company_key"] and _same_posting(p, q):
                     dup = q["id"]
                     break
         if dup:
@@ -250,7 +271,7 @@ def screen(conn, cfg, judge, log):
             judgment["final_reason"] = reason
             db.update(conn, p["id"], status="judged", description=p["description"],
                       description_status=p["description_status"], locations=p["locations"],
-                      judgment=judgment, verdict=verdict, tier=judgment.get("company_tier"),
+                      judgment=judgment, verdict=verdict, tier=p["tier"],
                       ai_model=judge.model, judged_at=_now())
             judged += 1
             # Keep the connection's transaction short-ish on big batches.
@@ -283,15 +304,6 @@ def match_coverage(conn):
     return matched
 
 
-def _same_link(a, b):
-    """Same posting by apply link (ignoring query strings and language prefixes)."""
-
-    def tail(u):
-        return (u or "").split("?")[0].rstrip("/").rsplit("/", 1)[-1].lower()
-
-    return bool(tail(a)) and len(tail(a)) > 6 and tail(a) == tail(b)
-
-
 def fill_dates_from_simplify(conn):
     """
     Company-site postings with no date (some job sites don't give one, or
@@ -316,7 +328,7 @@ def fill_dates_from_simplify(conn):
     filled = 0
     for u in undated:
         for r in listed.get(u["company_key"], []):
-            if _same_link(u["url"], r["url"]) or same_role(u["title"], r["title"]):
+            if same_link(u["url"], r["url"]) or same_role(u["title"], r["title"]):
                 db.update(conn, u["id"], posted_at=r["posted_at"], posted_approx=False)
                 filled += 1
                 break

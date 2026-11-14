@@ -36,11 +36,9 @@ class Judgment(BaseModel):
                               "(or remote in the US).")
     role_fit: Literal["strong", "partial", "none"] = Field(
         description="How well the actual work matches the roles in the profile.")
-    company_tier: Literal["top", "strong", "standard"] = Field(
-        description="Using the profile's definition of top tier.")
     beats_current_offer: bool = Field(description="Would this internship beat the person's "
                                       "current Summer offer, by the profile's rules (pay, resume "
-                                      "name, Florida, full-time conversion over $100k)?")
+                                      "name, full-time conversion over $100k)?")
     blocked_category: bool = Field(description="The company falls into one of the excluded "
                                    "kinds of company.")
     pay: Optional[str] = Field(default=None, description='Pay if the posting states it, '
@@ -54,7 +52,8 @@ class Judgment(BaseModel):
 
 class CompanyTier(BaseModel):
     company: str
-    tier: Literal["top", "strong", "standard"]
+    # Strings because Gemini's response schemas only take string enums.
+    tier: Literal["1", "2", "3"]
 
 
 class CompanyTiers(BaseModel):
@@ -112,6 +111,8 @@ def _posting_prompt(p):
         parts.append(f"Degrees listed: {', '.join(p['degrees'])}")
     if p.get("url"):
         parts.append(f"Link: {p['url']}")
+    if p.get("tier"):
+        parts.append(f"Company tier: Tier {p['tier']} (already decided; don't re-rate the company)")
 
     desc = (p.get("description") or "").strip()
     parts.append("")
@@ -170,7 +171,9 @@ class GeminiVertex:
         return self._ask(system, _posting_prompt(posting), Judgment, 4000)
 
     def tiers(self, system, names):
-        prompt = ("Rate each company's tier using the profile's definition of top tier. "
+        prompt = ("Rate each company's tier (1, 2 or 3) using the profile's \"Company tiers\" "
+                  "section. When you're unsure between two tiers, pick the lower one (the "
+                  "higher number). High posted intern pay alone doesn't make a company Tier 1. "
                   "Return every company exactly as written.\n\n" + "\n".join(names))
         return self._ask(system, prompt, CompanyTiers, 8000)
 
@@ -208,7 +211,7 @@ class Judge:
             result, usage = self.backend.tiers(self.system, names[i:i + batch])
             self._count(usage)
             for item in result.companies:
-                out[item.company] = item.tier
+                out[item.company] = int(item.tier)
         return out
 
 

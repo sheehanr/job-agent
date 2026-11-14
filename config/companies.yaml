@@ -14,6 +14,8 @@
 # site types: workday, greenhouse, lever, ashby, smartrecruiters, icims,
 #             oracle, eightfold, successfactors, jibe, radancy
 # aliases: other spellings Simplify uses for the company.
+# tier: 1, 2 or 3 - pins the company's tier (see profile.md, "Company
+#       tiers") and overrides the AI's rating. Leave it out to let the AI rate.
 
 companies:
 
@@ -245,6 +247,7 @@ companies:
 
   # ------------------------------------------- automotive and aerospace
   - name: Tesla
+    tier: 1
   - name: Rivian
   - name: Ford
     aliases: [Ford Motor Company]

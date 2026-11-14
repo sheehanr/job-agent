@@ -20,6 +20,7 @@ class Company:
     name: str
     aliases: list = field(default_factory=list)
     site: dict | None = None
+    tier: int | None = None     # your own pin (1-3); overrides the AI's rating
 
     @property
     def keys(self):
@@ -45,6 +46,10 @@ class Config:
         company = self.company_for(name)
         return company.name if company else (name or "").strip()
 
+    def pinned_tier(self, name):
+        company = self.company_for(name)
+        return company.tier if company else None
+
     def is_blocked(self, name):
         return normalize(name) in self.blocked_companies
 
@@ -57,6 +62,15 @@ class Config:
         for company in self.companies:
             for key in company.keys:
                 self._by_key[key] = company
+
+
+def _tier(entry):
+    tier = entry.get("tier")
+    if tier is None:
+        return None
+    if tier not in (1, 2, 3):
+        raise ValueError(f"companies.yaml: {entry['name']} has tier {tier!r}; use 1, 2 or 3")
+    return tier
 
 
 def _yaml(path):
@@ -74,6 +88,7 @@ def load(config_dir=CONFIG_DIR):
             name=c["name"],
             aliases=c.get("aliases") or [],
             site=c.get("site"),
+            tier=_tier(c),
         )
         for c in _yaml(config_dir / "companies.yaml").get("companies", [])
     ]

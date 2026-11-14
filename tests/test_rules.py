@@ -69,7 +69,7 @@ def test_company_site_non_tech_skipped(cfg):
 
 def judgment(**kw):
     j = {"is_internship": True, "term": "Fall 2027", "undergrad_eligible": True,
-         "us_location": True, "company_tier": "strong", "blocked_category": False,
+         "us_location": True, "blocked_category": False,
          "verdict": "alert", "reason": "Backend SWE; strong fit"}
     j.update(kw)
     return j
@@ -81,19 +81,12 @@ def test_final_verdict(cfg):
     assert rules.final_verdict(p, judgment(is_internship=False), cfg)[0] == "skip"
     assert rules.final_verdict(p, judgment(undergrad_eligible=False), cfg)[0] == "skip"
     assert rules.final_verdict(p, judgment(blocked_category=True), cfg)[0] == "skip"
-    # Summer 2027 only counts at top-tier companies.
-    assert rules.final_verdict(p, judgment(term="Summer 2027"), cfg)[0] == "skip"
-    assert rules.final_verdict(p, judgment(term="Summer 2027", company_tier="top"), cfg)[0] == "alert"
-    # ...or wherever the AI says it beats the current offer (e.g. Florida).
+    # Summer 2027 only counts when it beats the current offer...
     assert rules.final_verdict(p, judgment(term="Summer 2027", beats_current_offer=True), cfg)[0] == "alert"
-    assert rules.final_verdict(p, judgment(term="Summer 2027", company_tier="top",
-                                           beats_current_offer=False), cfg)[0] == "skip"
+    assert rules.final_verdict(p, judgment(term="Summer 2027", beats_current_offer=False), cfg)[0] == "skip"
+    # ...falling back to the company tier when the AI didn't say.
+    assert rules.final_verdict({**p, "tier": 2}, judgment(term="Summer 2027"), cfg)[0] == "alert"
+    assert rules.final_verdict({**p, "tier": 3}, judgment(term="Summer 2027"), cfg)[0] == "skip"
     # A co-op spanning summer and fall counts.
     assert rules.final_verdict(p, judgment(term="Summer 2027, Fall 2027"), cfg)[0] == "alert"
     assert rules.final_verdict(p, judgment(term="Spring 2027"), cfg)[0] == "skip"
-
-
-def test_in_florida():
-    assert rules.in_florida({"locations": ["Weston, FL"]})
-    assert rules.in_florida({"locations": ["Juno Beach, Florida"]})
-    assert not rules.in_florida({"locations": ["Flint, MI"]})
