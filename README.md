@@ -1,10 +1,5 @@
 # Job Agent
 
-> **Built with [Claude Code](https://claude.com/claude-code).** The code in
-> this repo was written by Claude from my requirements and feedback; I
-> designed what it should do, tested it and use it. Commits made by Claude
-> are marked `Co-Authored-By: Claude`.
-
 A personal internship and co-op tracker. Every 30 minutes it checks
 [Simplify's internship list](https://github.com/SimplifyJobs/Summer2027-Internships)
 and the careers sites of the companies you care about, has an AI read each
@@ -169,3 +164,8 @@ db/schema.sql        database tables
 scripts/             finding a company's job site, scheduler setup
 tests/               unit tests
 ```
+
+## How it was built
+
+Built with [Claude Code](https://claude.com/claude-code): I decided what it
+should do and tested it, and Claude wrote the code.
