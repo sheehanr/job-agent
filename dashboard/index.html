@@ -199,6 +199,34 @@ const STATES = { alabama: "AL", alaska: "AK", arizona: "AZ", arkansas: "AR", cal
   tennessee: "TN", texas: "TX", utah: "UT", vermont: "VT", virginia: "VA", washington: "WA",
   "west virginia": "WV", wisconsin: "WI", wyoming: "WY", "puerto rico": "PR" };
 const STATE_CODES = new Set(Object.values(STATES));
+
+// Country codes in locations ("CH - Adliswil", "Shanghai,CHN") shown as names.
+const ISO3 = { CHN: "CN", IND: "IN", CAN: "CA", MEX: "MX", GBR: "GB", DEU: "DE", FRA: "FR",
+  NLD: "NL", IRL: "IE", ISR: "IL", JPN: "JP", KOR: "KR", TWN: "TW", SGP: "SG", MYS: "MY",
+  PHL: "PH", POL: "PL", ROU: "RO", HUN: "HU", CZE: "CZ", ITA: "IT", ESP: "ES", PRT: "PT",
+  BRA: "BR", ARG: "AR", CRI: "CR", CHE: "CH", AUT: "AT", BEL: "BE", SWE: "SE", DNK: "DK",
+  NOR: "NO", FIN: "FI", AUS: "AU", NZL: "NZ", VNM: "VN", THA: "TH", IDN: "ID", ARE: "AE" };
+const REGION_NAMES = (() => { try { return new Intl.DisplayNames(["en"], { type: "region" }); } catch (e) { return null; } })();
+
+// Every country's English name, lowercased, for locations that spell it out.
+const COUNTRY_NAMES = (() => {
+  const names = {};
+  if (!REGION_NAMES) return names;
+  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  for (const a of A) for (const b of A) {
+    try { const n = REGION_NAMES.of(a + b); if (n && n !== a + b) names[n.toLowerCase()] = n; } catch (e) { /* not a region */ }
+  }
+  return names;
+})();
+
+function countryName(code) {
+  const iso2 = ISO3[code] || code;
+  if (!REGION_NAMES || iso2.length !== 2) return "";
+  try {
+    const name = REGION_NAMES.of(iso2);
+    return name && name !== iso2 ? name : "";
+  } catch (e) { return ""; }
+}
 const COUNTRY_RE = /\b(united states of america|united states|usa|u\.s\.a?\.?)\b|(^|[\s,-])US(?=$|[\s,-])/gi;
 
 // Shorthands Simplify writes instead of a city.
@@ -231,7 +259,8 @@ function shortPlace(raw) {
         (i <= 1 || hadUS || (isLast && !afterCode))) {
       state = part.toUpperCase(); continue;
     }
-    if (!country && /^[A-Z]{2,3}$/.test(part) && !STATE_CODES.has(part)) { country = part; continue; }
+    if (!country && /^[A-Z]{2,3}$/.test(part) && countryName(part)) { country = countryName(part); continue; }
+    if (!country && COUNTRY_NAMES[low] && !STATES[low]) { country = COUNTRY_NAMES[low]; continue; }
     const pre = part.match(/^([A-Z]{2})\s+(.+)$/);
     if (!state && pre && STATE_CODES.has(pre[1])) { state = pre[1]; if (!city) city = pre[2]; continue; }
     if (!city) city = part;
