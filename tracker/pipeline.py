@@ -151,6 +151,35 @@ def company_tiers(conn, cfg, judge, names, log):
             for n in names}
 
 
+def location_places(conn, judge, raws, log=print):
+    """
+    {raw location string: [formatted places]} using the cached map in
+    meta.location_map; strings not seen before are formatted by the AI in
+    one batch and added to it.
+    """
+
+    cache = db.get_meta(conn, "location_map", {}) or {}
+    missing = sorted({r for r in raws if r and r.strip() and r not in cache})
+    if missing:
+        log(f"Formatting {len(missing)} new location strings")
+        cache.update(judge.normalize_locations(missing))
+        db.set_meta(conn, "location_map", cache)
+    return cache
+
+
+def places_for(posting, judgment, loc_map):
+    """The posting's formatted places: what the AI read in the posting
+    itself, else the formatted versions of the source's location strings."""
+
+    places = [p for p in (judgment or {}).get("places") or [] if p]
+    if places:
+        return list(dict.fromkeys(places))
+    out = []
+    for raw in posting.get("locations") or []:
+        out += loc_map.get(raw, [])
+    return list(dict.fromkeys(out))
+
+
 def _recent_feedback(conn, limit=25):
     return db.rows(conn, """
         select company, title, feedback_kind, feedback_reason from postings
@@ -268,6 +297,8 @@ def screen(conn, cfg, judge, log):
         except Exception as e:
             return p, None, f"{type(e).__name__}: {str(e)[:300]}"
 
+    loc_map = location_places(conn, judge, [l for p in unique for l in p.get("locations") or []], log)
+
     judged, errors = 0, 0
     with cf.ThreadPoolExecutor(WORKERS) as ex:
         for p, judgment, err in ex.map(work, unique):
@@ -279,6 +310,7 @@ def screen(conn, cfg, judge, log):
             judgment["final_reason"] = reason
             db.update(conn, p["id"], status="judged", description=p["description"],
                       description_status=p["description_status"], locations=p["locations"],
+                      places=places_for(p, judgment, loc_map),
                       judgment=judgment, verdict=verdict, tier=p["tier"],
                       ai_model=judge.model, judged_at=_now())
             judged += 1

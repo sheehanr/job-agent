@@ -1,7 +1,7 @@
 import { VIEWS, requireAuth, sb } from "./_lib.js";
 
 const FIELDS = [
-  "id", "source", "company", "title", "locations", "url", "terms", "tier", "verdict",
+  "id", "source", "company", "title", "locations", "places", "url", "terms", "tier", "verdict",
   "judgment", "description_status", "first_seen", "posted_at", "posted_approx", "active", "baseline",
   "user_status", "feedback_kind", "feedback_reason", "feedback_at", "applied_at",
 ].join(",");

@@ -17,6 +17,9 @@ from tracker.config import env
 
 DESCRIPTION_CHARS = 7000
 
+# How locations are written everywhere (judgments and the location map).
+PLACE_RULES = 'US places as "City, ST" with the two-letter state code (e.g. "Los Angeles, CA", "Wyoming, MI"); other countries as "City, Country" with the full country name (e.g. "Haifa, Israel", "Taipei, Taiwan"); remote as "Remote (US)" or "Remote (Country)"; a state or country alone if that\'s all there is (e.g. "MI", "Canada"). Expand shorthands (SF, NYC, LA = Los Angeles). Drop building names, street addresses and internal site codes.'
+
 
 class Judgment(BaseModel):
     internship_evidence: str = Field(description="Quote the words in the DESCRIPTION (not the "
@@ -45,8 +48,12 @@ class Judgment(BaseModel):
                                       "name, full-time conversion over $100k)?")
     blocked_category: bool = Field(description="The company falls into one of the excluded "
                                    "kinds of company.")
+    places: list[str] = Field(description="Every location the role can be done from, read "
+                              "from the posting itself (it beats the listing's location tags). "
+                              + PLACE_RULES + " Empty list if the posting gives no location.")
     pay: Optional[str] = Field(default=None, description='Pay if the posting states it, '
-                               'e.g. "$45-55/hr". Null if not stated.')
+                               'e.g. "$45-55/hr". Keep the currency when it isn\'t US dollars, '
+                               'e.g. "NT$200/hr", "€3,000/month". Null if not stated.')
     verdict: Literal["alert", "maybe", "skip"] = Field(
         description="alert = a good match worth a phone notification; maybe = borderline or "
         "worth a look; skip = not a fit. An unspecified, rolling or immediate start is NOT a "
@@ -57,6 +64,15 @@ class Judgment(BaseModel):
                         "factor - the work, the company, eligibility or a clearly unwanted term - "
                         "e.g. 'Backend SWE on payments infra; strong fit' or 'Lab failure "
                         "analysis, no software work'. Don't cite an unclear term as the reason.")
+
+
+class LocationMapping(BaseModel):
+    raw: str
+    places: list[str]
+
+
+class LocationMap(BaseModel):
+    items: list[LocationMapping]
 
 
 class CompanyTier(BaseModel):
@@ -184,6 +200,13 @@ class GeminiVertex:
     def judge(self, system, posting):
         return self._ask(system, _posting_prompt(posting), Judgment, 4000)
 
+    def locations(self, raws):
+        prompt = ("Rewrite each job-posting location below in a standard format. Each line is "
+                  "one location string; it may list several places separated by ';'. Return "
+                  "every string exactly as written in `raw`, with its places. " + PLACE_RULES +
+                  "\n\n" + "\n".join(raws))
+        return self._ask("You format job-posting locations.", prompt, LocationMap, 16000)
+
     def tiers(self, system, names):
         prompt = ("Rate each company's tier (1, 2 or 3) using the profile's \"Company tiers\" "
                   "section. When you're unsure between two tiers, pick the lower one (the "
@@ -217,6 +240,17 @@ class Judge:
         judgment, usage = self.backend.judge(self.system, posting)
         self._count(usage)
         return judgment.model_dump()
+
+    def normalize_locations(self, raws, batch=80):
+        """{raw location string: [formatted places]} for these strings."""
+        out = {}
+        raws = sorted({r for r in raws if r and r.strip()})
+        for i in range(0, len(raws), batch):
+            result, usage = self.backend.locations(raws[i:i + batch])
+            self._count(usage)
+            for item in result.items:
+                out[item.raw] = [p.strip() for p in item.places if p and p.strip()]
+        return out
 
     def company_tiers(self, names, batch=80):
         out = {}

@@ -12,7 +12,8 @@ create table if not exists postings (
   company_key        text not null,            -- normalised, for matching
   title              text not null,
   title_key          text not null,
-  locations          text[] not null default '{}',
+  locations          text[] not null default '{}',  -- as the source wrote them
+  places             text[],                   -- formatted: "Los Angeles, CA", "Haifa, Israel"
   url                text not null default '',
   terms              text[] not null default '{}',
   degrees            text[] not null default '{}',
@@ -106,3 +107,5 @@ do $$ begin
     alter table postings alter column tier type smallint using null;
   end if;
 end $$;
+
+alter table postings add column if not exists places text[];
