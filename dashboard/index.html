@@ -12,6 +12,7 @@
   --faint: #6a707a; --line: #1f2228; --line-strong: #30343c;
   --accent: #ff7a1a; --accent-ink: #1a0a00; --accent-soft: rgba(255, 122, 26, .14);
   --accent-glow: rgba(255, 122, 26, .55);
+  --good: #34d77b; --good-soft: rgba(52, 215, 123, .13);
   --warn: #f5c84c; --warn-soft: rgba(245, 200, 76, .12);
   --bad: #ff5c5c; --bad-soft: rgba(255, 92, 92, .12);
   --chip: #1a1d22; --shadow: 0 1px 0 rgba(255, 255, 255, .025) inset;
@@ -58,7 +59,8 @@ nav.tabs .n { color: var(--faint); font-weight: 400; margin-left: 4px; font-size
 .badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .badge { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--chip);
   color: var(--muted); white-space: nowrap; font-weight: 500; }
-.badge.top { background: var(--accent-soft); color: var(--accent); }
+.badge.top { background: var(--good-soft); color: var(--good); }
+.badge.term { background: var(--accent-soft); color: var(--accent); }
 .badge.warn { background: var(--warn-soft); color: var(--warn); }
 .badge.bad { background: var(--bad-soft); color: var(--bad); }
 .facts { color: var(--muted); font-size: 13px; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
@@ -118,6 +120,8 @@ const TABS = [
   ["not_fit", "Not a fit"], ["skipped", "Skipped by AI"], ["coverage", "Coverage"],
 ];
 const TIER_RANK = { top: 0, strong: 1, standard: 2 };
+// The term you're mainly applying for (config/settings.yaml target_terms).
+const TARGET_TERM = "Fall 2027";
 const params = new URLSearchParams(location.search);
 const state = {
   tab: params.get("tab") || "matches",
@@ -164,6 +168,15 @@ function postedLabel(r) {
   const days = (Date.now() - new Date(r.posted_at)) / 86400000;
   const text = r.posted_approx ? `Posted ${Math.round(days)}+ days ago` : `Posted ${ago(r.posted_at)}`;
   return { text, old: days > 45 };
+}
+
+// Best first: roles for your target term, then roles with no term listed
+// (could be your term), then everything else (e.g. Summer 2027).
+function termRank(r) {
+  const t = termOf(r);
+  if (t.includes(TARGET_TERM)) return 0;
+  if (t === "Term not listed") return 1;
+  return 2;
 }
 
 function termOf(r) {
@@ -233,7 +246,8 @@ function filtered() {
     rows = rows.filter((r) => r.posted_at && new Date(r.posted_at).getTime() >= cutoff);
   }
   rows = [...rows];
-  if (state.sort === "best") rows.sort((a, b) => (TIER_RANK[a.tier] ?? 3) - (TIER_RANK[b.tier] ?? 3) || postedTime(b) - postedTime(a));
+  if (state.sort === "best") rows.sort((a, b) => termRank(a) - termRank(b) ||
+    (TIER_RANK[a.tier] ?? 3) - (TIER_RANK[b.tier] ?? 3) || postedTime(b) - postedTime(a));
   else if (state.sort === "posted") rows.sort((a, b) => postedTime(b) - postedTime(a));
   else rows.sort((a, b) => new Date(b.first_seen) - new Date(a.first_seen));
   return rows;
@@ -242,7 +256,7 @@ function filtered() {
 function card(r) {
   const j = r.judgment || {};
   const tier = r.tier ? `<span class="badge ${r.tier === "top" ? "top" : ""}">${r.tier === "top" ? "Top tier" : r.tier === "strong" ? "Strong" : "Standard"}</span>` : "";
-  const badges = [tier,
+  const badges = [termRank(r) === 0 ? `<span class="badge term">${TARGET_TERM}</span>` : "", tier,
     r.description_status === "unavailable" ? `<span class="badge warn" title="Couldn't read the description; judged from the title">Unverified</span>` : "",
     !r.active ? `<span class="badge bad">Closed</span>` : "",
     r.baseline ? "" : `<span class="badge">New</span>`].join("");
@@ -295,7 +309,7 @@ function feedbackForm(r) {
 function renderList() {
   const rows = filtered();
   const blurb = {
-    matches: "Postings the AI rated a good fit. Best first: top-tier companies, then most recently posted. Dates in red are over 45 days old.",
+    matches: `Postings the AI rated a good fit. Best first: ${TARGET_TERM} roles, then roles with no term listed, then the rest (Summer 2027 roles that beat your current offer); within each, top-tier companies and the most recently posted first. Dates in red are over 45 days old.`,
     maybe: "Borderline postings: worth a look, not worth a notification.",
     applied: "Postings you marked as applied.",
     not_fit: "Postings you marked as not a fit. These teach the AI filter what to skip.",
