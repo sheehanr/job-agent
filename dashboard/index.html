@@ -219,6 +219,41 @@ const COUNTRY_NAMES = (() => {
   return names;
 })();
 
+// Non-US places that postings often list with no country. Leaves out
+// names shared with common US cities (Cambridge, Waterloo, Paris...).
+const PLACE_COUNTRY = {
+  India: ["bengaluru", "bangalore", "hyderabad", "pune", "chennai", "mumbai", "gurgaon", "gurugram",
+    "noida", "new delhi", "delhi", "kolkata", "ahmedabad"],
+  China: ["shanghai", "beijing", "shenzhen", "suzhou", "guangzhou", "chengdu", "hangzhou", "wuhan", "xi'an", "shenyang"],
+  Canada: ["toronto", "vancouver", "montreal", "montréal", "mississauga", "calgary", "ottawa", "markham",
+    "ontario", "quebec", "québec", "british columbia", "alberta", "nova scotia", "manitoba"],
+  "United Kingdom": ["london", "manchester", "edinburgh", "glasgow", "bristol", "belfast", "reading", "england", "scotland", "wales"],
+  Ireland: ["dublin", "cork", "galway", "limerick", "shannon", "carrigtwohill"],
+  Poland: ["krakow", "kraków", "warsaw", "warszawa", "wroclaw", "wrocław", "gdansk", "gdańsk", "lodz", "łódź"],
+  Germany: ["munich", "münchen", "berlin", "frankfurt", "hamburg", "erlangen", "forchheim", "stuttgart"],
+  France: ["lyon", "grenoble", "sophia antipolis", "toulouse", "valbonne"],
+  Netherlands: ["amsterdam", "eindhoven", "utrecht", "rotterdam", "veldhoven", "maastricht"],
+  Switzerland: ["zurich", "zürich", "geneva", "basel", "adliswil", "lausanne"],
+  Israel: ["tel aviv", "haifa", "herzliya", "petah tikva", "petah-tikva", "jerusalem", "yokneam"],
+  Japan: ["tokyo", "osaka", "yokohama"], "South Korea": ["seoul"], Taiwan: ["taipei", "hsinchu"],
+  Singapore: ["singapore"], Malaysia: ["penang", "kulim", "kuala lumpur", "selangor", "johor", "subang"],
+  Vietnam: ["ho chi minh city", "hanoi"], Philippines: ["manila", "baguio city", "cebu"],
+  Thailand: ["bangkok"], Indonesia: ["jakarta"], Australia: ["sydney", "melbourne", "brisbane"],
+  Mexico: ["mexico city", "guadalajara", "tijuana", "monterrey", "juarez", "juárez"],
+  Brazil: ["são paulo", "sao paulo", "campinas", "varginha", "belo horizonte"], "Costa Rica": ["heredia", "alajuela", "cartago"],
+  Hungary: ["budapest"], Romania: ["bucharest", "cluj-napoca", "iasi"], "Czechia": ["prague", "brno"],
+  Italy: ["milan", "milano", "rome", "turin", "rivalta di torino"], Spain: ["madrid", "barcelona"],
+  Sweden: ["stockholm"], Denmark: ["copenhagen"], Finland: ["helsinki"], Belgium: ["brussels"],
+};
+// Big US tech cities that postings list with no state.
+const US_CITY_STATE = { "san francisco": "CA", "san jose": "CA", "seattle": "WA", "austin": "TX",
+  "new york city": "NY", "new york": "NY", "boston": "MA", "chicago": "IL", "los angeles": "CA",
+  "mountain view": "CA", "sunnyvale": "CA", "palo alto": "CA", "menlo park": "CA", "redmond": "WA",
+  "bellevue": "WA", "san diego": "CA", "denver": "CO", "atlanta": "GA", "pittsburgh": "PA",
+  "waltham": "MA", "lehi": "UT", "madison": "WI", "niskayuna": "NY", "rensselaer": "NY" };
+const PLACE_TO_COUNTRY = Object.fromEntries(
+  Object.entries(PLACE_COUNTRY).flatMap(([country, places]) => places.map((p) => [p, country])));
+
 function countryName(code) {
   const iso2 = ISO3[code] || code;
   if (!REGION_NAMES || iso2.length !== 2) return "";
@@ -235,7 +270,19 @@ const SHORTHANDS = { sf: "San Francisco, CA", "south sf": "South San Francisco, 
   "washington dc": "Washington, DC", "washington d.c.": "Washington, DC" };
 
 function shortPlace(raw) {
+  // Full street address ("..., Kennesaw, GA, 30144 USA"): city and state
+  // just before the ZIP code.
+  const addr = String(raw || "").match(/([A-Za-z .'-]+),\s*([A-Z]{2}),?\s*\d{5}\b/);
+  if (addr && STATE_CODES.has(addr[2])) return `${addr[1].trim()}, ${addr[2]}`;
   let s = String(raw || "").replace(/\(.*?\)/g, " ").trim();
+  s = s.replace(/^[A-Z]{2,5}\d{0,3}:\s*/, "");                       // "CAP25: ..." site codes
+  s = s.replace(/\s+:\s+.*$/, "");                                   // "Madison : 1 Exact Lane"
+  s = s.replace(/^.*>\s*/, "");                                      // "United States > Madison"
+  s = s.replace(/^US-([A-Z]{2})-([^,]+).*$/, "$2, $1");              // "US-CA-Menlo Park"
+  s = s.replace(/^([A-Za-z .]+?)-([A-Z]{2})-.*$/, "$1, $2");          // "Seattle-WA-2nd Ave"
+  if (s === s.toUpperCase() && /[A-Z]{3}/.test(s) && /\s/.test(s)) {  // "SAN JOSE"
+    s = s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  }
   if (!s) return "";
   if (/remote/i.test(s)) return "Remote";
   const short = SHORTHANDS[s.toLowerCase().replace(/,/g, "").replace(/\s+/g, " ")];
@@ -268,6 +315,13 @@ function shortPlace(raw) {
   if (city && state) return `${city}, ${state}`;
   if (state) return state;
   if (city && country) return `${city}, ${country}`;
+  // No state and no country given: look the place up.
+  const usState = city && !country && US_CITY_STATE[city.toLowerCase()];
+  if (usState) return `${city}, ${usState}`;
+  const guess = !hadUS && (PLACE_TO_COUNTRY[(city || "").toLowerCase()] ||
+    parts.map((x) => PLACE_TO_COUNTRY[x.toLowerCase()]).find(Boolean));
+  if (city && guess) return city.toLowerCase() === guess.toLowerCase() || PLACE_COUNTRY[guess].includes(city.toLowerCase()) && ["ontario", "quebec", "québec", "british columbia", "alberta", "nova scotia", "manitoba", "england", "scotland", "wales", "singapore"].includes(city.toLowerCase())
+    ? guess : `${city}, ${guess}`;
   return city || country || (hadUS ? "United States" : String(raw));
 }
 
