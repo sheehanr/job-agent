@@ -339,7 +339,8 @@ function shortPlace(raw) {
 // Formatted by the AI ("Los Angeles, CA", "Taipei, Taiwan"); the local
 // parser is only a fallback for the odd posting that has none yet.
 function placesOf(r) {
-  if (r.places && r.places.length) return [...new Set(r.places)];
+  // An empty list means the AI found no real place (just site codes).
+  if (Array.isArray(r.places)) return [...new Set(r.places)];
   const all = (r.locations || []).flatMap((l) => String(l).split(/\s*;\s*/)).map(shortPlace).filter(Boolean);
   return [...new Set(all)];
 }
