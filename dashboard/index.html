@@ -324,7 +324,10 @@ function shortPlace(raw) {
     if (!city) city = part;
   }
   if (city && state) return `${city}, ${state}`;
-  if (state) return state;
+  if (state) {
+    const name = Object.keys(STATES).find((k) => STATES[k] === state) || state;
+    return `${name.replace(/\b\w/g, (c) => c.toUpperCase())}, US`;
+  }
   if (city && country) return `${city}, ${country}`;
   // No state and no country given: look the place up.
   const usState = city && !country && US_CITY_STATE[city.toLowerCase()];

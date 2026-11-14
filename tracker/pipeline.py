@@ -22,7 +22,7 @@ from tracker import db, notify, rules
 from tracker.ai import Judge
 from tracker.config import env
 from tracker.describe import describe
-from tracker.location import UNKNOWN, classify_location
+from tracker.location import _US_STATES, UNKNOWN, classify_location
 from tracker.sources import fetch_company, simplify
 from tracker.sources.http import session
 from tracker.text import same_link, same_role, title_key
@@ -167,17 +167,26 @@ def location_places(conn, judge, raws, log=print):
     return cache
 
 
+def tidy_place(place):
+    """A bare state code ("LA", "MI") becomes "Louisiana, US" - "LA" alone
+    reads like Los Angeles, and a lone code doesn't match "City, ST"."""
+
+    place = (place or "").strip()
+    if place.upper() == "DC":
+        return "Washington, DC"
+    name = _US_STATES.get(place.upper()) if len(place) == 2 else None
+    return f"{name.title()}, US" if name else place
+
+
 def places_for(posting, judgment, loc_map):
     """The posting's formatted places: what the AI read in the posting
     itself, else the formatted versions of the source's location strings."""
 
     places = [p for p in (judgment or {}).get("places") or [] if p]
-    if places:
-        return list(dict.fromkeys(places))
-    out = []
-    for raw in posting.get("locations") or []:
-        out += loc_map.get(raw, [])
-    return list(dict.fromkeys(out))
+    if not places:
+        for raw in posting.get("locations") or []:
+            places += loc_map.get(raw, [])
+    return list(dict.fromkeys(tidy_place(p) for p in places if p))
 
 
 def _recent_feedback(conn, limit=25):

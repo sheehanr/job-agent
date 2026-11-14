@@ -38,3 +38,10 @@ def test_evergreen_dates_are_unknown():
     # Ramp-style: early but plausible for a 2027 role.
     spring = datetime(2026, 4, 9, tzinfo=timezone.utc)
     assert plausible_posted(spring, "Software Engineering Intern, Backend") == spring
+
+
+def test_state_only_places_are_spelled_out():
+    from tracker.pipeline import places_for
+    assert places_for({}, {"places": ["LA", "Wyoming, MI", "MI", "Remote (US)"]}, {}) == [
+        "Louisiana, US", "Wyoming, MI", "Michigan, US", "Remote (US)"]
+    assert places_for({"locations": ["DC"]}, {}, {"DC": ["DC"]}) == ["Washington, DC"]

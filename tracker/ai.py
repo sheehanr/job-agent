@@ -18,7 +18,7 @@ from tracker.config import env
 DESCRIPTION_CHARS = 7000
 
 # How locations are written everywhere (judgments and the location map).
-PLACE_RULES = 'US places as "City, ST" with the two-letter state code (e.g. "Los Angeles, CA", "Wyoming, MI"); other countries as "City, Country" with the full country name (e.g. "Haifa, Israel", "Taipei, Taiwan"); remote as "Remote (US)" or "Remote (Country)"; a state or country alone if that\'s all there is (e.g. "MI", "Canada"). Expand shorthands (SF, NYC, LA = Los Angeles). Drop building names, street addresses and internal site codes.'
+PLACE_RULES = 'US places as "City, ST" with the two-letter state code (e.g. "Los Angeles, CA", "Wyoming, MI"); other countries as "City, Country" with the full country name (e.g. "Haifa, Israel", "Taipei, Taiwan"); remote as "Remote (US)" or "Remote (Country)"; a US state with no city as "State name, US" (e.g. "Michigan, US"), and a country alone if that\'s all there is (e.g. "Canada"). Expand shorthands (SF, NYC, LA = Los Angeles). Drop building names, street addresses and internal site codes.'
 
 
 class Judgment(BaseModel):
