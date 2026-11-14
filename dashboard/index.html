@@ -201,15 +201,24 @@ const STATES = { alabama: "AL", alaska: "AK", arizona: "AZ", arkansas: "AR", cal
 const STATE_CODES = new Set(Object.values(STATES));
 const COUNTRY_RE = /\b(united states of america|united states|usa|u\.s\.a?\.?)\b|(^|[\s,-])US(?=$|[\s,-])/gi;
 
+// Shorthands Simplify writes instead of a city.
+const SHORTHANDS = { sf: "San Francisco, CA", "south sf": "South San Francisco, CA",
+  nyc: "New York, NY", "bay area": "San Francisco Bay Area, CA", dc: "Washington, DC",
+  "washington dc": "Washington, DC", "washington d.c.": "Washington, DC" };
+
 function shortPlace(raw) {
   let s = String(raw || "").replace(/\(.*?\)/g, " ").trim();
   if (!s) return "";
   if (/remote/i.test(s)) return "Remote";
+  const short = SHORTHANDS[s.toLowerCase().replace(/,/g, "").replace(/\s+/g, " ")];
+  if (short) return short;
+  // "Washington, DC" / "Washington D.C., USA": the city, not the state.
+  if (/\bwashington,?\s*d\.?\s?c\b|\bdistrict of columbia\b/i.test(s)) return "Washington, DC";
   const hadUS = new RegExp(COUNTRY_RE.source, "i").test(s);
   s = s.replace(COUNTRY_RE, " ");
   // Split on commas and on spaced dashes (" - "), not on "In-Office".
   const parts = s.split(/\s*,\s*|\s+[-–|]\s+/).map((x) => x.trim()).filter(Boolean);
-  let state = "", city = "";
+  let state = "", city = "", country = "";
   for (const [i, part] of parts.entries()) {
     const low = part.toLowerCase();
     if (!state && STATES[low]) { state = STATES[low]; continue; }
@@ -222,13 +231,15 @@ function shortPlace(raw) {
         (i <= 1 || hadUS || (isLast && !afterCode))) {
       state = part.toUpperCase(); continue;
     }
+    if (!country && /^[A-Z]{2,3}$/.test(part) && !STATE_CODES.has(part)) { country = part; continue; }
     const pre = part.match(/^([A-Z]{2})\s+(.+)$/);
     if (!state && pre && STATE_CODES.has(pre[1])) { state = pre[1]; if (!city) city = pre[2]; continue; }
     if (!city) city = part;
   }
   if (city && state) return `${city}, ${state}`;
   if (state) return state;
-  return city || (hadUS ? "United States" : String(raw));
+  if (city && country) return `${city}, ${country}`;
+  return city || country || (hadUS ? "United States" : String(raw));
 }
 
 function placesOf(r) {
@@ -246,7 +257,7 @@ function locationChip(r) {
 // ---- Pay: postings give it per hour, week, month or year. Show it per
 // hour; converted amounts get a "~" and the original on hover.
 function payChip(raw) {
-  if (!raw) return "";
+  if (!raw) return `<span>Pay not listed</span>`;
   const text = String(raw);
   if (!text.includes("$")) return `<span>${esc(text)}</span>`;
   const nums = [...text.matchAll(/(\d[\d,]*(?:\.\d+)?)\s*(k)?\b/gi)]
