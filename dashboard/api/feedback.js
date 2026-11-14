@@ -1,4 +1,4 @@
-// Called by the "Not a fit" buttons on ntfy notifications. Authenticated
+// Called by the "Not interested" buttons on ntfy notifications. Authenticated
 // by an HMAC signature in the link instead of the dashboard cookie.
 import crypto from "node:crypto";
 import { feedbackSig, idList, setFeedback } from "./_lib.js";

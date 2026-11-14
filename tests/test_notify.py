@@ -14,7 +14,7 @@ def test_single_role():
     assert n["message"].startswith("https://x/1\n(Austin, TX)")
     assert n["click"] == "https://x/1"
     labels = [a["label"] for a in n["actions"]]
-    assert labels == ["Not a fit: role", "Not a fit: company"]
+    assert labels == ["Not interested: role", "Not interested: company"]
     assert "ids=1&kind=role&sig=" in n["actions"][0]["url"]
 
 

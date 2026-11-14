@@ -40,6 +40,7 @@ nav.tabs button { background: none; border: 0; padding: 9px 12px; cursor: pointe
   border-bottom: 2px solid transparent; white-space: nowrap; font-weight: 500; }
 nav.tabs button.on { color: var(--text); border-bottom-color: var(--accent); }
 nav.tabs .n { color: var(--faint); font-weight: 400; margin-left: 4px; font-size: 13px; }
+nav.tabs .sep { flex: none; width: 1px; background: var(--line-strong); margin: 9px 6px; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .toolbar input[type=search] { flex: 1 1 220px; min-width: 0; }
 .toolbar input, .toolbar select { background: var(--field); border: 1px solid var(--line);
@@ -118,9 +119,11 @@ h2 { font-size: 15px; margin: 22px 0 8px; }
 <script>
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const TABS = [
-  ["matches", "Matches"], ["maybe", "Maybe"], ["applied", "Applied"],
-  ["not_fit", "Not a fit"], ["archive", "Archive"], ["skipped", "Skipped by AI"], ["coverage", "Coverage"],
+// Tabs in groups: the AI's inbox, where reviewed postings go, the archive.
+const TAB_GROUPS = [
+  [["matches", "Matches"], ["maybe", "Maybe"], ["skipped", "Skipped by AI"]],
+  [["applied", "Applied"], ["not_fit", "Not interested"]],
+  [["archive", "Archive"]],
 ];
 const TIER_RANK = { 1: 0, 2: 1, 3: 2 };  // unknown tier sorts last
 const params = new URLSearchParams(location.search);
@@ -225,21 +228,24 @@ function shell() {
     <header>
       <h1>Sheehan’s Job Agent</h1>
       <div class="meta">${last ? `Last checked ${ago(last.finished_at)}` : ""}<br>
+        <button class="linkbtn" id="statuslink">Tracker status</button> ·
         <button class="linkbtn" id="signout">Sign out</button></div>
     </header>
-    <nav class="tabs">${TABS.map(([k, label]) =>
+    <nav class="tabs">${TAB_GROUPS.map((group) => group.map(([k, label]) =>
       `<button data-tab="${k}" class="${k === state.tab ? "on" : ""}">${label}${
-        state.counts[k] != null ? `<span class="n">${state.counts[k]}</span>` : ""}</button>`).join("")}</nav>
+        state.counts[k] != null ? `<span class="n">${state.counts[k]}</span>` : ""}</button>`).join("")
+    ).join('<span class="sep"></span>')}</nav>
     <div id="body"></div>`;
   document.querySelectorAll("nav.tabs button").forEach((b) => (b.onclick = () => switchTab(b.dataset.tab)));
   $("#signout").onclick = async () => { await fetch("/api/login", { method: "DELETE" }); renderLogin(); };
+  $("#statuslink").onclick = () => switchTab("status");
 }
 
 async function switchTab(tab) {
   state.tab = tab; state.open = null;
   history.replaceState(null, "", tab === "matches" ? location.pathname : `?tab=${tab}`);
   shell();
-  if (tab === "coverage") return renderCoverage();
+  if (tab === "status") return renderCoverage();
   if (!state.rows[tab]) await load(tab);
   renderList();
 }
@@ -248,8 +254,21 @@ async function load(tab) {
   $("#body").innerHTML = `<div class="empty">Loading...</div>`;
   const data = await api(`/api/postings?view=${tab}`);
   state.rows[tab] = data.rows;
-  state.counts[tab] = data.rows.length;
   shell();
+}
+
+// Every tab's number, from the server (refreshed after each action).
+async function loadCounts() {
+  try {
+    state.counts = await api("/api/counts");
+    document.querySelectorAll("nav.tabs button").forEach((b) => {
+      const n = state.counts[b.dataset.tab];
+      let span = b.querySelector(".n");
+      if (n == null) return;
+      if (!span) { span = document.createElement("span"); span.className = "n"; b.appendChild(span); }
+      span.textContent = n;
+    });
+  } catch (e) { /* counts are a nicety */ }
 }
 
 function filtered() {
@@ -296,10 +315,10 @@ function card(r) {
   ].filter(Boolean).map((f) => f.startsWith("<span") ? f : `<span>${f}</span>`).join("");
   const reason = j.final_reason || j.reason || "";
   const fbNote = r.user_status === "not_fit"
-    ? `<div class="note">Not a fit: the ${r.feedback_kind === "company" ? "company" : "role"}${r.feedback_reason ? ` - ${esc(r.feedback_reason)}` : ""}</div>` : "";
+    ? `<div class="note">Not interested: the ${r.feedback_kind === "company" ? "company" : "role"}${r.feedback_reason ? ` - ${esc(r.feedback_reason)}` : ""}</div>` : "";
   const applied = r.user_status === "applied" ? `<div class="note">Applied ${ago(r.applied_at)}</div>`
     : r.user_status === "good_fit" ? `<div class="note">You marked this as a fit (the AI had turned it down)</div>`
-    : r.user_status === "skipped" ? `<div class="note">Skipped ${ago(r.feedback_at)}</div>` : "";
+    : r.user_status === "skipped" ? `<div class="note">Archived ${ago(r.feedback_at)}</div>` : "";
 
   const openBtn = (primary) =>
     `<a class="btn ${primary ? "primary" : ""}" href="${esc(r.url)}" target="_blank" rel="noopener">Open posting</a>`;
@@ -309,12 +328,12 @@ function card(r) {
     actions = `${openBtn(true)}
       <button class="btn" data-act="applied">Applied</button>
       <button class="btn" data-act="goodfit">It fits</button>
-      <button class="btn" data-act="skip">Skip</button>`;
+      <button class="btn" data-act="skip">Archive</button>`;
   } else if (!r.user_status) {
     actions = `${openBtn(true)}
       <button class="btn" data-act="applied">Applied</button>
-      <button class="btn" data-act="notfit">Not a fit</button>
-      <button class="btn" data-act="skip">Skip</button>`;
+      <button class="btn" data-act="notfit">Not interested</button>
+      <button class="btn" data-act="skip">Archive</button>`;
   } else if (r.user_status === "good_fit") {
     actions = `${openBtn(true)}
       <button class="btn" data-act="applied">Applied</button>
@@ -349,12 +368,12 @@ function feedbackForm(r) {
 function renderList() {
   const rows = filtered();
   const blurb = {
-    matches: "Postings the AI rated a good fit. Not a fit teaches the AI; Skip just clears one (it goes to Archive). Dates in red are over 45 days old.",
-    maybe: "Borderline postings: worth a look, not worth a notification.",
+    matches: "Postings the AI rated a good fit. Not interested teaches the AI to skip things like it; Archive just clears one. Dates in red are over 45 days old.",
+    maybe: "Borderline postings: worth a look, not worth a notification. Archive clears one.",
     applied: "Postings you marked as applied. The AI treats these as examples of what you want.",
-    not_fit: "Postings you marked as not a fit. These teach the AI filter what to skip.",
-    skipped: "Postings the AI read and turned down, with its reason. If it got one wrong, mark it It fits (or Applied) - both teach the AI what you want. Skip clears one without teaching it anything.",
-    archive: "Postings you skipped. The AI never sees these; Undo puts one back.",
+    not_fit: "Postings you marked as not interested. These teach the AI what to skip.",
+    skipped: "Postings the AI read and turned down, with its reason. If it got one wrong, mark it It fits (or Applied) - both teach the AI what you want. Archive clears one without teaching it anything.",
+    archive: "Postings you cleared without applying. The AI never sees these; Undo puts one back.",
   }[state.tab];
   $("#body").innerHTML = `
     <p class="note">${blurb}</p>
@@ -431,7 +450,7 @@ async function act(id, action, el) {
       const kind = el.querySelector("[data-kind].on")?.dataset.kind || "role";
       await api("/api/act", { method: "POST", body: { ids: [id], action: "not_fit", kind, reason } });
       state.open = null;
-      moved(r, { user_status: "not_fit", feedback_kind: kind, feedback_reason: reason, feedback_at: new Date().toISOString() }, "Marked as not a fit");
+      moved(r, { user_status: "not_fit", feedback_kind: kind, feedback_reason: reason, feedback_at: new Date().toISOString() }, "Marked as not interested");
     } else if (action === "undo") {
       await api("/api/act", { method: "POST", body: { ids: [id], action: "undo" } });
       moved(r, { user_status: null, feedback_kind: null, feedback_reason: null, applied_at: null }, "Undone");
@@ -447,13 +466,12 @@ function moved(r, patch, msg) {
   // Lists change membership; reload the others lazily.
   for (const k of Object.keys(state.rows)) if (k !== state.tab) delete state.rows[k];
   state.rows[state.tab] = state.rows[state.tab].filter((x) => x.id !== r.id || state.tab === "skipped" && !r.user_status);
-  state.counts[state.tab] = state.rows[state.tab].length;
-  shell(); renderList();
+  shell(); renderList(); loadCounts();
   if (patch.user_status !== null) {
     toast(msg, async () => {
       await api("/api/act", { method: "POST", body: { ids: [r.id], action: "undo" } });
       Object.assign(r, before);
-      delete state.rows[state.tab]; await load(state.tab); renderList();
+      delete state.rows[state.tab]; await load(state.tab); renderList(); loadCounts();
     });
   } else toast(msg);
 }
@@ -464,6 +482,7 @@ async function renderCoverage() {
   const cov = st.coverage || [];
   const runs = st.runs || [];
   $("#body").innerHTML = `
+    <h2 style="margin-top:0">Tracker status</h2>
     <p class="note">For each company tracked on its own careers site: how many of the roles found there Simplify also listed, and how many hours later on average (negative = Simplify was first). Counts only roles that appeared after tracking started.</p>
     ${cov.length ? `<div class="scroll"><table><tr><th>Company</th><th class="num">Found on site</th><th class="num">Also on Simplify</th><th class="num">Simplify lag</th></tr>
       ${cov.map((c) => `<tr><td>${esc(c.company)}</td><td class="num">${c.direct_postings}</td>
@@ -483,7 +502,8 @@ async function start() {
   try {
     state.status = await api("/api/status");
     shell();
-    if (state.tab === "coverage") return renderCoverage();
+    loadCounts();
+    if (state.tab === "status") return renderCoverage();
     await load(state.tab);
     renderList();
   } catch (e) {

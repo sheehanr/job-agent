@@ -13,7 +13,7 @@ found, what you've applied to, and what you've ruled out.
   PhD-only roles, mislabeled full-time jobs, marketing "analytics" roles and
   postings for the wrong term.
 - **Tunable:** describe what you want in `config/profile.md`. Tap
-  "Not a fit" on a notification and the filter learns from it.
+  "Not interested" on a notification and the filter learns from it.
 
 ## How it works
 
@@ -42,7 +42,7 @@ Company sites ─────┘   (US, term,                (job-site APIs)    
    example, Summer 2027 roles only count at top-tier companies).
 5. **Notify.** Each match becomes an ntfy notification titled
    "Company - Role", with the apply link and location. Tapping it opens the
-   posting; the **Not a fit: role** and **Not a fit: company** buttons
+   posting; the **Not interested: role** and **Not interested: company** buttons
    record feedback the AI sees on later runs.
 6. **Coverage.** For postings found on company sites, the tracker records
    whether Simplify also listed them and how many hours later, so you can see
@@ -83,12 +83,18 @@ fills the dashboard, but nothing is pushed to your phone.
 ## Daily use
 
 - **Phone:** tap a notification to open the posting. If it's wrong, tap
-  **Not a fit: role** or **Not a fit: company**.
-- **Dashboard:** *Matches* is your inbox, best first. Mark postings
-  **Applied** or **Not a fit** (with an optional reason). Every action has an
-  **Undo**. *Skipped by AI* shows what the filter turned down and why, so you
-  can check it isn't too strict; *Coverage* shows how Simplify compares with
-  the direct checks and the status of recent runs.
+  **Not interested: role** or **Not interested: company**.
+- **Dashboard:** *Matches*, *Maybe* and *Skipped by AI* are the AI's inbox;
+  work through them and each posting lands in one of three places:
+  - **Applied** - the AI treats these as examples of what you want.
+  - **Not interested** (with an optional reason) - teaches the AI to skip
+    things like it.
+  - **Archive** - cleared without teaching the AI anything.
+
+  On *Skipped by AI*, **It fits** moves a posting the AI turned down into
+  Matches and counts as an example of what you want. Every action has an
+  **Undo**. *Tracker status* (top right) shows how Simplify compares with
+  the direct checks, and recent runs.
 
 ## Setup (for your own copy)
 

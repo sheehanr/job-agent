@@ -110,3 +110,24 @@ export async function setFeedback(ids, action, { kind = null, reason = null } = 
     prefer: "return=representation",
   });
 }
+
+// The dashboard's lists. Matches, Maybe and Skipped by AI are the AI's
+// inbox; the rest are where reviewed postings end up.
+export const VIEWS = {
+  // AI matches you haven't acted on, plus postings you marked "It fits".
+  matches: "status=eq.judged&or=(and(verdict.eq.alert,user_status.is.null),user_status.eq.good_fit)",
+  maybe: "status=eq.judged&verdict=eq.maybe&user_status=is.null",
+  skipped: "status=eq.judged&verdict=eq.skip&user_status=is.null",
+  applied: "user_status=eq.applied",
+  not_fit: "user_status=eq.not_fit",
+  archive: "user_status=eq.skipped",
+};
+
+export async function count(view) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/postings?select=id&${VIEWS[view]}&source=neq.legacy`, {
+    method: "HEAD",
+    headers: { apikey: SECRET_KEY, Authorization: `Bearer ${SECRET_KEY}`, Prefer: "count=exact" },
+  });
+  const total = (r.headers.get("content-range") || "").split("/")[1];
+  return total && total !== "*" ? Number(total) : null;
+}

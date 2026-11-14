@@ -81,7 +81,7 @@ def build(postings, dashboard_url="", secret=""):
                     "message": "\n\n".join(blocks), "ids": ids, "click": None, "actions": []}
             if dashboard_url and secret:
                 note["click"] = f"{dashboard_url.rstrip('/')}/?company={requests.utils.quote(company)}"
-                note["actions"] = [_feedback_action("Not a fit: company", ids, "company",
+                note["actions"] = [_feedback_action("Not interested: company", ids, "company",
                                                     dashboard_url, secret)]
             notes.append(note)
             continue
@@ -95,8 +95,8 @@ def build(postings, dashboard_url="", secret=""):
                     "click": ps[0]["url"] if len(ps) == 1 else None, "actions": []}
             if dashboard_url and secret:
                 note["actions"] = [
-                    _feedback_action("Not a fit: role", ids, "role", dashboard_url, secret),
-                    _feedback_action("Not a fit: company", ids, "company", dashboard_url, secret),
+                    _feedback_action("Not interested: role", ids, "role", dashboard_url, secret),
+                    _feedback_action("Not interested: company", ids, "company", dashboard_url, secret),
                 ]
             notes.append(note)
 
