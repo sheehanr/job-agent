@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Job Agent</title>
+<title>Sheehan’s Job Agent</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ff7a1a'/%3E%3Cpath d='M9 12h14v11a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2zM13 12V9.5A1.5 1.5 0 0 1 14.5 8h3A1.5 1.5 0 0 1 19 9.5V12' fill='none' stroke='%231a0a00' stroke-width='2'/%3E%3C/svg%3E">
 <style>
@@ -202,7 +202,7 @@ function termOf(r) {
 function renderLogin() {
   $("#app").innerHTML = `
     <form class="login" id="login">
-      <h1>Job Agent</h1>
+      <h1>Sheehan’s Job Agent</h1>
       <input type="password" id="pw" placeholder="Password" autocomplete="current-password" autofocus>
       <div class="err" id="err"></div>
       <button class="btn primary">Sign in</button>
@@ -219,7 +219,7 @@ function shell() {
   const last = state.status?.runs?.find((r) => r.finished_at);
   $("#app").innerHTML = `
     <header>
-      <h1>Job Agent</h1>
+      <h1>Sheehan’s Job Agent</h1>
       <div class="meta">${last ? `Last checked ${ago(last.finished_at)}` : ""}<br>
         <button class="linkbtn" id="signout">Sign out</button></div>
     </header>
