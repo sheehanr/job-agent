@@ -60,7 +60,6 @@ nav.tabs .n { color: var(--faint); font-weight: 400; margin-left: 4px; font-size
 .badge { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--chip);
   color: var(--muted); white-space: nowrap; font-weight: 500; }
 .badge.top { background: var(--good-soft); color: var(--good); }
-.badge.term { background: var(--accent-soft); color: var(--accent); }
 .badge.warn { background: var(--warn-soft); color: var(--warn); }
 .badge.bad { background: var(--bad-soft); color: var(--bad); }
 .facts { color: var(--muted); font-size: 13px; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
@@ -120,13 +119,11 @@ const TABS = [
   ["not_fit", "Not a fit"], ["skipped", "Skipped by AI"], ["coverage", "Coverage"],
 ];
 const TIER_RANK = { top: 0, strong: 1, standard: 2 };
-// The term you're mainly applying for (config/settings.yaml target_terms).
-const TARGET_TERM = "Fall 2027";
 const params = new URLSearchParams(location.search);
 const state = {
   tab: params.get("tab") || "matches",
   q: params.get("company") || "",
-  term: "", source: "", sort: "best", newOnly: false, within: "",
+  term: "", source: "", sort: "posted_desc", newOnly: false, within: "",
   rows: {}, counts: {}, status: null, open: null,
 };
 
@@ -170,13 +167,21 @@ function postedLabel(r) {
   return { text, old: days > 45 };
 }
 
-// Best first: roles for your target term, then roles with no term listed
-// (could be your term), then everything else (e.g. Summer 2027).
-function termRank(r) {
+const SEASONS = { Winter: 0, Spring: 1, Summer: 2, Fall: 3 };
+
+// Every term a posting is for, e.g. ["Summer 2027", "Fall 2027"].
+function termsOf(r) {
   const t = termOf(r);
-  if (t.includes(TARGET_TERM)) return 0;
-  if (t === "Term not listed") return 1;
-  return 2;
+  return t === "Term not listed" ? [] : t.split(/,\s*/).filter(Boolean);
+}
+
+function termOptions() {
+  const all = new Set();
+  for (const r of state.rows[state.tab] || []) termsOf(r).forEach((t) => all.add(t));
+  return [...all].sort((a, b) => {
+    const [sa, ya] = a.split(" "), [sb, yb] = b.split(" ");
+    return (ya - yb) || ((SEASONS[sa] ?? 9) - (SEASONS[sb] ?? 9));
+  });
 }
 
 function termOf(r) {
@@ -238,7 +243,7 @@ function filtered() {
   let rows = state.rows[state.tab] || [];
   const q = state.q.trim().toLowerCase();
   if (q) rows = rows.filter((r) => `${r.company} ${r.title} ${(r.locations || []).join(" ")} ${r.judgment?.reason || ""}`.toLowerCase().includes(q));
-  if (state.term) rows = rows.filter((r) => state.term === "none" ? termOf(r) === "Term not listed" : termOf(r).includes(state.term));
+  if (state.term) rows = rows.filter((r) => state.term === "none" ? !termsOf(r).length : termsOf(r).includes(state.term));
   if (state.source) rows = rows.filter((r) => state.source === "simplify" ? r.source === "simplify" : r.source !== "simplify");
   if (state.newOnly) rows = rows.filter((r) => !r.baseline);
   if (state.within) {
@@ -246,17 +251,22 @@ function filtered() {
     rows = rows.filter((r) => r.posted_at && new Date(r.posted_at).getTime() >= cutoff);
   }
   rows = [...rows];
-  if (state.sort === "best") rows.sort((a, b) => termRank(a) - termRank(b) ||
-    (TIER_RANK[a.tier] ?? 3) - (TIER_RANK[b.tier] ?? 3) || postedTime(b) - postedTime(a));
-  else if (state.sort === "posted") rows.sort((a, b) => postedTime(b) - postedTime(a));
-  else rows.sort((a, b) => new Date(b.first_seen) - new Date(a.first_seen));
+  const found = (r) => new Date(r.first_seen).getTime();
+  const sorts = {
+    posted_desc: (a, b) => postedTime(b) - postedTime(a),
+    posted_asc: (a, b) => postedTime(a) - postedTime(b),
+    found_desc: (a, b) => found(b) - found(a),
+    found_asc: (a, b) => found(a) - found(b),
+    tier: (a, b) => (TIER_RANK[a.tier] ?? 3) - (TIER_RANK[b.tier] ?? 3) || postedTime(b) - postedTime(a),
+  };
+  rows.sort(sorts[state.sort] || sorts.posted_desc);
   return rows;
 }
 
 function card(r) {
   const j = r.judgment || {};
   const tier = r.tier ? `<span class="badge ${r.tier === "top" ? "top" : ""}">${r.tier === "top" ? "Top tier" : r.tier === "strong" ? "Strong" : "Standard"}</span>` : "";
-  const badges = [termRank(r) === 0 ? `<span class="badge term">${TARGET_TERM}</span>` : "", tier,
+  const badges = [tier,
     r.description_status === "unavailable" ? `<span class="badge warn" title="Couldn't read the description; judged from the title">Unverified</span>` : "",
     !r.active ? `<span class="badge bad">Closed</span>` : "",
     r.baseline ? "" : `<span class="badge">New</span>`].join("");
@@ -309,7 +319,7 @@ function feedbackForm(r) {
 function renderList() {
   const rows = filtered();
   const blurb = {
-    matches: `Postings the AI rated a good fit. Best first: ${TARGET_TERM} roles, then roles with no term listed, then the rest (Summer 2027 roles that beat your current offer); within each, top-tier companies and the most recently posted first. Dates in red are over 45 days old.`,
+    matches: "Postings the AI rated a good fit. Dates in red are over 45 days old.",
     maybe: "Borderline postings: worth a look, not worth a notification.",
     applied: "Postings you marked as applied.",
     not_fit: "Postings you marked as not a fit. These teach the AI filter what to skip.",
@@ -320,14 +330,18 @@ function renderList() {
     <div class="toolbar">
       <input type="search" id="q" placeholder="Search company, role, location" value="${esc(state.q)}">
       <select id="term">
-        <option value="">All terms</option><option value="Fall 2027">Fall 2027</option>
-        <option value="Summer 2027">Summer 2027</option><option value="none">Term not listed</option>
+        <option value="">All terms</option>
+        ${termOptions().map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join("")}
+        <option value="none">Term not listed</option>
       </select>
       <select id="source"><option value="">All sources</option><option value="direct">Company sites</option><option value="simplify">Simplify</option></select>
       <select id="within"><option value="">Posted any time</option><option value="7">Posted this week</option>
         <option value="30">Posted last 30 days</option><option value="90">Posted last 90 days</option></select>
-      <select id="sort"><option value="best">Best first</option><option value="posted">Newest posted</option>
-        <option value="found">Newest found</option></select>
+      <select id="sort">
+        <option value="posted_desc">Newest posted</option><option value="posted_asc">Oldest posted</option>
+        <option value="found_desc">Newest found</option><option value="found_asc">Oldest found</option>
+        <option value="tier">Top tier first</option>
+      </select>
       <label class="note" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="newOnly" ${state.newOnly ? "checked" : ""}> New since tracking started</label>
     </div>
     <div id="list">${rows.length ? rows.map(card).join("") : `<div class="empty">Nothing here${state.q || state.term || state.source ? " for these filters" : " yet"}.</div>`}</div>`;
