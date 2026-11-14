@@ -208,6 +208,8 @@ const ISO3 = { CHN: "CN", IND: "IN", CAN: "CA", MEX: "MX", GBR: "GB", DEU: "DE",
   NOR: "NO", FIN: "FI", AUS: "AU", NZL: "NZ", VNM: "VN", THA: "TH", IDN: "ID", ARE: "AE" };
 const REGION_NAMES = (() => { try { return new Intl.DisplayNames(["en"], { type: "region" }); } catch (e) { return null; } })();
 
+const REGION_WORD_RE = /\b(district|province|prefecture|governorate|oblast|voivodeship|region|territory|canton|emirate)\b/i;
+
 // Every country's English name, lowercased, for locations that spell it out.
 const COUNTRY_NAMES = (() => {
   const names = {};
@@ -297,6 +299,15 @@ function shortPlace(raw) {
   for (const [i, part] of parts.entries()) {
     const low = part.toLowerCase();
     if (!state && STATES[low]) { state = STATES[low]; continue; }
+    // A trailing two-letter code after a non-US region ("Haifa, Haifa
+    // District, IL", "Hyderabad, TS, IN") or after a known non-US city
+    // ("Haifa, IL") is a country, even when it looks like a state code.
+    if (!country && i === parts.length - 1 && part.length === 2 && countryName(part) && i > 0 &&
+        (REGION_WORD_RE.test(parts[i - 1]) ||
+         (/^[A-Z]{2}$/.test(parts[i - 1]) && !STATE_CODES.has(parts[i - 1])) ||
+         PLACE_TO_COUNTRY[parts[0].toLowerCase()] === countryName(part))) {
+      country = countryName(part); state = ""; continue;
+    }
     // A two-letter code is a state right after the city, last ("Kingwood,
     // Houston, TX"), or when the location says US - but not after another
     // code ("Hyderabad, TS, IN" is India, not Indiana).

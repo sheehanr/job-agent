@@ -176,10 +176,55 @@ _UNKNOWN_RE = re.compile(
 _SEGMENT_SPLIT_RE = re.compile(r"\s*(?:;|\||\n|\s/\s)\s*")
 
 
+# Two-letter codes that are both a US state and a country (IL = Illinois or
+# Israel, IN = Indiana or India, CA = California or Canada, ...). Which one
+# a location means depends on the rest of it.
+_REGION_WORD_RE = re.compile(
+    r"\b(district|province|prefecture|governorate|oblast|voivodeship|region|"
+    r"territory|canton|emirate)\b", re.IGNORECASE)
+
+# Non-US cities that show up with their country's code, which is also a
+# US state code ("Haifa, IL", "Bengaluru, IN", "Toronto, CA").
+_CITY_COUNTRY_CODE = {
+    "IL": {"haifa", "tel aviv", "tel aviv-yafo", "jerusalem", "herzliya", "petah tikva",
+           "petah-tikva", "yokneam", "yokneam illit", "ra'anana", "raanana", "netanya",
+           "beer sheva", "be'er sheva", "rehovot", "kfar saba", "hod hasharon", "caesarea",
+           "ramat gan", "airport city", "or yehuda", "migdal haemek", "kiryat gat"},
+    "IN": {"bengaluru", "bangalore", "hyderabad", "pune", "chennai", "mumbai", "gurgaon",
+           "gurugram", "noida", "new delhi", "delhi", "kolkata", "ahmedabad", "kochi"},
+    "CA": {"toronto", "vancouver", "montreal", "montréal", "mississauga", "calgary", "ottawa",
+           "markham", "kanata", "burnaby", "edmonton", "winnipeg", "halifax", "kitchener"},
+    "DE": {"munich", "münchen", "berlin", "frankfurt", "hamburg", "erlangen", "forchheim",
+           "stuttgart", "dresden", "nuremberg", "nürnberg", "cologne", "köln", "düsseldorf"},
+}
+
+
+def _foreign_by_code(segment):
+    """True for "City, Region, CC" or "City, CC" where CC is a country code
+    that happens to look like a US state code."""
+
+    parts = [p.strip() for p in segment.split(",") if p.strip()]
+    if len(parts) < 2 or not re.fullmatch(r"[A-Z]{2}", parts[-1]) or parts[-1] == "US":
+        return False
+    code = parts[-1]
+    if parts[0].lower() in _CITY_COUNTRY_CODE.get(code, ()):
+        return True
+    if len(parts) >= 3:
+        middle = parts[-2]
+        if _REGION_WORD_RE.search(middle):
+            return True
+        if re.fullmatch(r"[A-Z]{2}", middle) and middle not in _US_STATES:
+            return True
+    return False
+
+
 def _classify_segment(segment):
 
     if _UNKNOWN_RE.match(segment):
         return UNKNOWN
+
+    if _foreign_by_code(segment):
+        return NON_US
 
     site_code = _SITE_CODE_RE.match(segment.strip())
 
