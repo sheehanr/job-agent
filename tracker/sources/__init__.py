@@ -32,7 +32,7 @@ def fetch_company(company, s):
 
     for p in postings:
         p["posted_at"], p["posted_approx"] = posted_date(p.pop("posted", None))
-        p["posted_at"] = plausible_posted(p["posted_at"], p.get("title"))
+        p["posted_at"] = plausible_posted(p["posted_at"], p.get("title"), p.get("terms") or [])
         detail = {k: v for k, v in site.items()}
         for field in _REF_FIELDS:
             if field in p:

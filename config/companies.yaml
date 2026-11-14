@@ -157,6 +157,7 @@ companies:
 
   # ------------------------------------------- enterprise and dev tools
   - name: Atlassian
+    tier: 1
   - name: Workday
     site: {type: workday, host: workday.wd5.myworkdayjobs.com, tenant: workday, site: Workday_Early_Career}
   - name: Autodesk
@@ -262,6 +263,7 @@ companies:
   - name: GE Aerospace
     site: {type: workday, host: geaerospace.wd5.myworkdayjobs.com, tenant: geaerospace, site: ge_externalsite}
   - name: Honeywell
+    tier: 3
     site: {type: oracle, host: ibqbjb.fa.ocs.oraclecloud.com, site: Honeywell}
 
   # ------------------------------------------------------------ Florida
@@ -284,3 +286,22 @@ companies:
   - name: Raymond James
     aliases: [Raymond James Financial]
     site: {type: workday, host: raymondjames.wd1.myworkdayjobs.com, tenant: raymondjames, site: RaymondJamesEarlyCareers}
+
+  # ------------------------------------------------- tier pins only
+  # Not tracked directly; listed here only to fix the AI's tier rating.
+  - name: Roku
+    tier: 2
+  - name: WhatNot
+    tier: 2
+  - name: Exa
+    tier: 2
+  - name: JMP Statistical Discovery
+    tier: 3
+  - name: ID.me
+    tier: 3
+  - name: Symbotic
+    tier: 3
+  - name: Impulse Space
+    tier: 3
+  - name: Formlabs
+    tier: 3

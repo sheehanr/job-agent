@@ -62,7 +62,7 @@ class CompanyTiers(BaseModel):
 
 def _system_prompt(cfg, feedback):
 
-    liked = ", ".join(c.name for c in cfg.companies)
+    liked = ", ".join(c.name for c in cfg.companies if c.tier != 3)
     blocked = "\n".join(f"- {c}" for c in cfg.blocked_categories)
     lines = [
         "You screen job postings for one person, using their profile below. Read the "

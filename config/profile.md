@@ -72,12 +72,16 @@ recognition and new-grad pay:
   Netflix, Databricks, Stripe, Ramp, Figma, Notion, Rippling, top AI labs.
   Companies with household-name recognition in tech (e.g. Tesla, SpaceX)
   are Tier 1 even if their new-grad pay is a bit lower.
-- **Tier 2**: well-known tech companies with good SWE name recognition
-  and solid new-grad pay (about $110-150k base). E.g. Qualcomm, Workday,
-  Cohesity, Expedia, F5, Adobe.
+- **Tier 2**: well-known tech companies with broad SWE name recognition
+  (a typical CS student would know the company) and solid new-grad pay
+  (about $110-150k base). E.g. Qualcomm, Workday, Cohesity, Expedia, F5,
+  Adobe.
 - **Tier 3**: companies about at Bank of America's level or below for SWE
   pay and name: banks, card issuers, exchanges, established non-tech
-  companies.
+  companies, and industrial or other non-software companies (e.g.
+  Honeywell). Startups and smaller companies that a typical CS student
+  wouldn't know are Tier 3 too, even if they post high intern pay, unless
+  they're a widely known, well-funded unicorn.
 
 When unsure between two tiers, pick the lower one. High posted intern pay
 alone doesn't make a company Tier 1. A Summer 2027 internship only beats
