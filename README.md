@@ -1,5 +1,10 @@
 # Job Agent
 
+> **Built with [Claude Code](https://claude.com/claude-code).** The code in
+> this repo was written by Claude (Anthropic's AI coding assistant) from my
+> requirements and feedback; I designed what it should do, tested it and
+> use it. Commits made by Claude are marked `Co-Authored-By: Claude`.
+
 A personal internship and co-op tracker. Every 30 minutes it checks
 [Simplify's internship list](https://github.com/SimplifyJobs/Summer2027-Internships)
 and the careers sites of the companies you care about, has an AI read each
