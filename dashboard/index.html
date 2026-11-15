@@ -570,7 +570,7 @@ function renderList() {
     maybe: "Borderline postings: worth a look, not worth a notification. Archive clears one.",
     applied: "Postings you marked as applied. The AI treats these as examples of what you want.",
     not_fit: "Postings you marked as not interested. These teach the AI what to skip.",
-    skipped: "Postings the AI read and turned down, with its reason. If it got one wrong, mark it Interested (or Applied) - both teach the AI what you want. Archive clears one without teaching it anything.",
+    skipped: "The AI turned these down. If it got one wrong, mark it Interested or Applied; Archive just clears one.",
     archive: "Postings you cleared without applying. The AI never sees these; Undo puts one back.",
   }[state.tab];
   $("#body").innerHTML = `
