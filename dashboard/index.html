@@ -21,6 +21,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+html { scrollbar-gutter: stable; }
 html, body { margin: 0; background: var(--bg); color: var(--text);
   font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
 a { color: var(--accent); text-decoration: none; }
@@ -557,7 +558,7 @@ function feedbackForm(r) {
   return `<div class="fb">
     ${editing ? "" : `<span class="seg"><button data-kind="role" class="on">The role</button><button data-kind="company">The company</button></span>`}
     <input type="text" maxlength="300" placeholder="Why? (optional, helps the filter learn)" value="${esc(r.feedback_reason || "")}">
-    <button class="btn small primary" data-act="save">Save</button>
+    <button class="btn small primary" data-act="save">${editing ? "Save reason" : "Mark not interested"}</button>
     <button class="btn small" data-act="cancel">Cancel</button>
   </div>`;
 }
@@ -620,6 +621,14 @@ function wireCards() {
       el.querySelectorAll("[data-kind]").forEach((x) => x.classList.toggle("on", x === b));
     }));
     el.querySelectorAll("[data-act]").forEach((b) => (b.onclick = () => act(id, b.dataset.act, el)));
+    const input = el.querySelector(".fb input");
+    if (input) {
+      input.onkeydown = (e) => {
+        if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); act(id, "save", el); }
+        else if (e.key === "Escape") act(id, "cancel", el);
+      };
+      input.focus();
+    }
   });
 }
 
