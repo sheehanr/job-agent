@@ -133,7 +133,7 @@ const params = new URLSearchParams(location.search);
 const state = {
   tab: params.get("tab") || "matches",
   q: params.get("company") || "",
-  term: "", source: "", sort: "posted_desc", newOnly: false, within: "",
+  term: "", source: "", sort: "posted_desc", archiveSort: "added_desc", newOnly: false, within: "",
   rows: {}, counts: {}, status: null, open: null,
 };
 
@@ -440,6 +440,11 @@ function shell() {
   $("#statuslink").onclick = () => switchTab("status");
 }
 
+// Archive keeps its own sort (newest added first); the other tabs share one.
+function sortKey() {
+  return state.tab === "archive" ? state.archiveSort : state.sort;
+}
+
 async function switchTab(tab) {
   state.tab = tab; state.open = null;
   history.replaceState(null, "", tab === "matches" ? location.pathname : `?tab=${tab}`);
@@ -489,10 +494,13 @@ function filtered() {
     found_desc: (a, b) => found(b) - found(a),
     found_asc: (a, b) => found(a) - found(b),
     tier: (a, b) => (TIER_RANK[a.tier] ?? 3) - (TIER_RANK[b.tier] ?? 3) || byPosted(-1)(a, b),
+    added_desc: (a, b) => new Date(b.feedback_at || 0) - new Date(a.feedback_at || 0),
   };
-  const order = sorts[state.sort] || sorts.posted_desc;
-  // Closed postings always go to the bottom, whatever the sort.
-  rows.sort((a, b) => (a.active === false) - (b.active === false) || order(a, b));
+  const sort = sortKey();
+  const order = sorts[sort] || sorts.posted_desc;
+  // Closed postings go to the bottom, except when listing in the order you
+  // archived them.
+  rows.sort((a, b) => (sort !== "added_desc" && (a.active === false) - (b.active === false)) || order(a, b));
   return rows;
 }
 
@@ -586,6 +594,7 @@ function renderList() {
       <select id="within"><option value="">Posted any time</option><option value="7">Posted this week</option>
         <option value="30">Posted last 30 days</option><option value="90">Posted last 90 days</option></select>
       <select id="sort">
+        ${state.tab === "archive" ? `<option value="added_desc">Newest added</option>` : ""}
         <option value="posted_desc">Newest posted</option><option value="posted_asc">Oldest posted</option>
         <option value="found_desc">Newest found</option><option value="found_asc">Oldest found</option>
         <option value="tier">Tier 1 first</option>
@@ -593,13 +602,13 @@ function renderList() {
       <label class="note" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="newOnly" ${state.newOnly ? "checked" : ""}> New since tracking started</label>
     </div>
     <div id="list">${rows.length ? rows.map(card).join("") : `<div class="empty">Nothing here${state.q || state.term || state.source ? " for these filters" : " yet"}.</div>`}</div>`;
-  $("#term").value = state.term; $("#source").value = state.source; $("#sort").value = state.sort;
+  $("#term").value = state.term; $("#source").value = state.source; $("#sort").value = sortKey();
   $("#within").value = state.within;
   $("#within").onchange = (e) => { state.within = e.target.value; rerenderList(); };
   $("#q").oninput = (e) => { state.q = e.target.value; rerenderList(); };
   $("#term").onchange = (e) => { state.term = e.target.value; rerenderList(); };
   $("#source").onchange = (e) => { state.source = e.target.value; rerenderList(); };
-  $("#sort").onchange = (e) => { state.sort = e.target.value; rerenderList(); };
+  $("#sort").onchange = (e) => { state[state.tab === "archive" ? "archiveSort" : "sort"] = e.target.value; rerenderList(); };
   $("#newOnly").onchange = (e) => { state.newOnly = e.target.checked; rerenderList(); };
   wireCards();
 }
