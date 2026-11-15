@@ -104,7 +104,8 @@ export async function setFeedback(ids, action, { kind = null, reason = null } = 
   } else {
     throw new Error("Unknown action");
   }
-  return sb(`postings?id=in.(${ids.join(",")})`, {
+  // Only the ids come back - the full rows (descriptions etc.) aren't needed.
+  return sb(`postings?id=in.(${ids.join(",")})&select=id`, {
     method: "PATCH",
     body: patch,
     prefer: "return=representation",

@@ -627,48 +627,65 @@ async function act(id, action, el) {
   const r = findRow(id);
   if (action === "notfit" || action === "reason") { state.open = id; return rerenderList(); }
   if (action === "cancel") { state.open = null; return rerenderList(); }
-  try {
-    if (action === "applied") {
-      await api("/api/act", { method: "POST", body: { ids: [id], action: "applied" } });
-      moved(r, { user_status: "applied", applied_at: new Date().toISOString() }, "Marked as applied");
-    } else if (action === "skip") {
-      await api("/api/act", { method: "POST", body: { ids: [id], action: "skip" } });
-      moved(r, { user_status: "skipped", feedback_at: new Date().toISOString() }, "Moved to Archive");
-    } else if (action === "goodfit") {
-      await api("/api/act", { method: "POST", body: { ids: [id], action: "good_fit" } });
-      moved(r, { user_status: "good_fit", feedback_at: new Date().toISOString() }, "Marked as interested - moved to Matches");
-    } else if (action === "save") {
-      const reason = el.querySelector(".fb input").value.trim();
-      if (r.user_status === "not_fit") {
-        await api("/api/act", { method: "POST", body: { ids: [id], action: "reason", reason } });
-        Object.assign(r, { feedback_reason: reason }); state.open = null; rerenderList();
-        return toast("Reason saved");
-      }
-      const kind = el.querySelector("[data-kind].on")?.dataset.kind || "role";
-      await api("/api/act", { method: "POST", body: { ids: [id], action: "not_fit", kind, reason } });
-      state.open = null;
-      moved(r, { user_status: "not_fit", feedback_kind: kind, feedback_reason: reason, feedback_at: new Date().toISOString() }, "Marked as not interested");
-    } else if (action === "undo") {
-      await api("/api/act", { method: "POST", body: { ids: [id], action: "undo" } });
-      moved(r, { user_status: null, feedback_kind: null, feedback_reason: null, applied_at: null }, "Undone");
+  const now = new Date().toISOString();
+  const send = (body) => api("/api/act", { method: "POST", body: { ids: [id], ...body } });
+  if (action === "applied") {
+    moved(r, { user_status: "applied", applied_at: now }, "Marked as applied", () => send({ action: "applied" }));
+  } else if (action === "skip") {
+    moved(r, { user_status: "skipped", feedback_at: now }, "Moved to Archive", () => send({ action: "skip" }));
+  } else if (action === "goodfit") {
+    moved(r, { user_status: "good_fit", feedback_at: now }, "Marked as interested - moved to Matches",
+          () => send({ action: "good_fit" }));
+  } else if (action === "save") {
+    const reason = el.querySelector(".fb input").value.trim();
+    state.open = null;
+    if (r.user_status === "not_fit") {
+      const old = r.feedback_reason;
+      Object.assign(r, { feedback_reason: reason }); rerenderList(); toast("Reason saved");
+      return send({ action: "reason", reason }).catch((e) => {
+        Object.assign(r, { feedback_reason: old }); rerenderList(); failed(e);
+      });
     }
-  } catch (e) {
-    if (e.message !== "signed out") toast(`Couldn't save: ${e.message}`);
+    const kind = el.querySelector("[data-kind].on")?.dataset.kind || "role";
+    moved(r, { user_status: "not_fit", feedback_kind: kind, feedback_reason: reason, feedback_at: now },
+          "Marked as not interested", () => send({ action: "not_fit", kind, reason }));
+  } else if (action === "undo") {
+    moved(r, { user_status: null, feedback_kind: null, feedback_reason: null, applied_at: null }, "Undone",
+          () => send({ action: "undo" }));
   }
 }
 
-function moved(r, patch, msg) {
-  const before = { user_status: r.user_status, feedback_kind: r.feedback_kind, feedback_reason: r.feedback_reason, applied_at: r.applied_at };
+function failed(e) {
+  if (e.message !== "signed out") toast(`Couldn't save: ${e.message}`);
+}
+
+// Moves the card right away and saves in the background; if the save
+// fails, the card goes back where it was.
+function moved(r, patch, msg, save) {
+  const before = { user_status: r.user_status, feedback_kind: r.feedback_kind, feedback_reason: r.feedback_reason,
+                   applied_at: r.applied_at, feedback_at: r.feedback_at };
+  const tab = state.tab;
+  const restore = async () => {
+    Object.assign(r, before);
+    delete state.rows[tab];
+    if (state.tab === tab) { await load(tab); renderList(); }
+    loadCounts();
+  };
   Object.assign(r, patch);
   // Lists change membership; reload the others lazily.
-  for (const k of Object.keys(state.rows)) if (k !== state.tab) delete state.rows[k];
-  state.rows[state.tab] = state.rows[state.tab].filter((x) => x.id !== r.id || state.tab === "skipped" && !r.user_status);
-  shell(); renderList(); loadCounts();
+  for (const k of Object.keys(state.rows)) if (k !== tab) delete state.rows[k];
+  state.rows[tab] = state.rows[tab].filter((x) => x.id !== r.id || tab === "skipped" && !r.user_status);
+  shell(); renderList();
+  // true once saved; false if it failed (and was rolled back).
+  const saving = save().then(() => { loadCounts(); return true; })
+    .catch(async (e) => { await restore(); failed(e); return false; });
   if (patch.user_status !== null) {
     toast(msg, async () => {
-      await api("/api/act", { method: "POST", body: { ids: [r.id], action: "undo" } });
-      Object.assign(r, before);
-      delete state.rows[state.tab]; await load(state.tab); renderList(); loadCounts();
+      if (!(await saving)) return;
+      try {
+        await api("/api/act", { method: "POST", body: { ids: [r.id], action: "undo" } });
+        await restore();
+      } catch (e) { failed(e); }
     });
   } else toast(msg);
 }
