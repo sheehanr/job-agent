@@ -20,7 +20,9 @@ include_coops: true
 
 # Simplify categories worth sending to the AI. "Hardware" postings only
 # pass when the title looks like embedded/firmware/robotics/software work.
-simplify_categories: [Software, AI/ML/Data, Hardware]
+# Simplify has started using longer names for some new listings ("Software
+# Engineering", "Data Science, AI & Machine Learning"); both spellings count.
+simplify_categories: [Software, Software Engineering, AI/ML/Data, "Data Science, AI & Machine Learning", Hardware]
 
 # Which AI judges postings (Gemini on Google Cloud Vertex AI).
 ai:
