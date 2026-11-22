@@ -146,15 +146,20 @@ def final_verdict(posting, judgment, cfg):
 
     if j.get("blocked_category"):
         return "skip", "excluded kind of company"
-    # An intern title wins over the AI's "not an internship" (it reads
-    # part-time or 6-month internships as jobs); then the AI's own verdict
-    # and reason - about the work - decide.
+    # Checks run from the most basic problem with the posting to the least,
+    # so the reason shown is the real one. An intern title wins over the
+    # AI's "not an internship" (it reads part-time or 6-month internships
+    # as jobs).
     if not j.get("is_internship", True) and not title_says_internship(posting):
         return "skip", "not an internship or co-op"
     if j.get("undergrad_eligible") is False:
         return "skip", "not open to undergrads"
     if j.get("us_location") is False:
         return "skip", "not in the US"
+    # The role itself isn't what you want (not software, say): the AI's
+    # reason about the work beats the term and offer checks below.
+    if j.get("role_fit") == "none" and j.get("verdict") == "skip" and j.get("reason"):
+        return "skip", j["reason"]
 
     terms = all_terms(posting)
     # Only real seasons count; "2027", "immediate" or "rolling" are unknown.

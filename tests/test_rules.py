@@ -112,3 +112,14 @@ def test_year_only_term_is_unknown(cfg):
     assert rules.final_verdict(p, judgment(term="Spring 2027, Summer 2027, Fall 2027"), cfg)[0] == "alert"
     reason = rules.final_verdict(p, judgment(term="Spring 2027"), cfg)[1]
     assert "N/A" not in reason and "Spring 2027" in reason
+
+
+def test_role_reason_beats_term_and_offer_reasons(cfg):
+    # A role the AI turned down for the work itself shows that reason, not
+    # "doesn't beat your current offer" or "not a term you're targeting".
+    j = {"is_internship": True, "undergrad_eligible": True, "us_location": True,
+         "role_fit": "none", "beats_current_offer": False, "verdict": "skip",
+         "reason": "Product marketing, not a software role."}
+    for term in ("Summer 2027", "Spring 2027"):
+        assert rules.final_verdict(simplify(terms=[term]), {**j, "term": term}, cfg) == (
+            "skip", "Product marketing, not a software role.")
