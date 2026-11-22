@@ -38,7 +38,9 @@ Company sites ─────┘   (US, term,                (job-site APIs)    
 4. **Company tiers.** Every company gets one tier, 1-3 (see "Company tiers"
    in `profile.md`): your pin in `companies.yaml` if you set one, otherwise
    an AI rating made once per company and cached.
-5. **AI judge.** Fetches the full job description and has Gemini fill in a
+5. **AI judge.** Fetches the full job description (if a site is down, it
+   tries again on later runs for two weeks and re-judges once the page reads)
+   and has Gemini fill in a
    structured judgment: internship or not, term, undergrad eligibility, US
    location, role fit, pay, whether it beats your current offer, verdict
    (alert / maybe / skip) and a one-line reason. It also sees your recent

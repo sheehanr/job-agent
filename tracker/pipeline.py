@@ -227,6 +227,79 @@ def _same_posting(a, b):
     return same_link(a.get("url"), b.get("url")) or same_role(a["title"], b["title"])
 
 
+def _read(p, s):
+    """The posting with its description read from the job page."""
+
+    text, locations, status = describe(p, s)
+    p = {**p, "description": text, "description_status": status}
+    known = [l for l in p.get("locations") or [] if classify_location(l) != UNKNOWN]
+    if locations and not known:
+        p["locations"] = locations
+    return p
+
+
+def _save_judgment(conn, cfg, judge, p, judgment, loc_map):
+    verdict, reason = rules.final_verdict(p, judgment, cfg)
+    judgment["final_reason"] = reason
+    db.update(conn, p["id"], status="judged", description=p["description"],
+              description_status=p["description_status"], locations=p["locations"],
+              places=places_for(p, judgment, loc_map),
+              judgment=judgment, verdict=verdict, tier=p["tier"],
+              ai_model=judge.model, judged_at=_now())
+
+
+RETRY_DAYS = 14   # how long to keep re-trying a description that failed to load
+MAX_RETRIES = 6
+
+
+def retry_descriptions(conn, cfg, judge, log):
+    """
+    Postings whose description couldn't be read when they were found (a
+    Workday outage, say) were judged from the title alone, with no pay. Try
+    again on later runs; when the page reads, the AI judges it properly.
+    """
+
+    rows = db.rows(conn, """
+        select * from postings
+        where status = 'judged' and description_status = 'unavailable' and active
+          and source <> 'legacy' and first_seen >= %s and describe_retries < %s
+        order by first_seen desc limit 60""", (_now() - timedelta(days=RETRY_DAYS), MAX_RETRIES))
+    if not rows:
+        return 0
+
+    def read(p):
+        try:
+            return _read(p, session())
+        except Exception:
+            return p
+
+    with cf.ThreadPoolExecutor(WORKERS) as ex:
+        readable = []
+        for p in ex.map(read, rows):
+            if p["description_status"] == "ok":
+                readable.append(p)
+            else:
+                conn.execute("update postings set describe_retries = describe_retries + 1 "
+                             "where id = %s", (p["id"],))
+        loc_map = location_places(conn, judge,
+                                  [l for p in readable for l in p.get("locations") or []], log)
+
+        def work(p):
+            try:
+                return p, judge.judge(p)
+            except Exception:
+                return p, None
+
+        fixed = 0
+        for p, judgment in ex.map(work, readable):
+            if judgment:
+                _save_judgment(conn, cfg, judge, p, judgment, loc_map)
+                fixed += 1
+
+    log(f"Descriptions retried: {len(rows)}, now read and re-judged: {fixed}")
+    return fixed
+
+
 def screen(conn, cfg, judge, log):
     """Rules, dedupe and AI for every posting still in status 'new'."""
 
@@ -294,15 +367,9 @@ def screen(conn, cfg, judge, log):
         f"{len(unique)} to the AI")
 
     def work(p):
-        s = session()
         try:
-            text, locations, status = describe(p, s)
-            p = {**p, "description": text, "description_status": status}
-            known = [l for l in p.get("locations") or [] if classify_location(l) != UNKNOWN]
-            if locations and not known:
-                p["locations"] = locations
-            judgment = judge.judge(p)
-            return p, judgment, None
+            p = _read(p, session())
+            return p, judge.judge(p), None
         except Exception as e:
             return p, None, f"{type(e).__name__}: {str(e)[:300]}"
 
@@ -315,13 +382,7 @@ def screen(conn, cfg, judge, log):
                 errors += 1
                 db.update(conn, p["id"], skip_reason=f"error: {err}")
                 continue
-            verdict, reason = rules.final_verdict(p, judgment, cfg)
-            judgment["final_reason"] = reason
-            db.update(conn, p["id"], status="judged", description=p["description"],
-                      description_status=p["description_status"], locations=p["locations"],
-                      places=places_for(p, judgment, loc_map),
-                      judgment=judgment, verdict=verdict, tier=p["tier"],
-                      ai_model=judge.model, judged_at=_now())
+            _save_judgment(conn, cfg, judge, p, judgment, loc_map)
             judged += 1
             # Keep the connection's transaction short-ish on big batches.
             if judged % 50 == 0:
@@ -444,6 +505,7 @@ def run(cfg, log=print):
 
             judge = Judge(cfg, _recent_feedback(conn), _recent_positive(conn))
             summary.update(screen(conn, cfg, judge, log))
+            summary["descriptions_recovered"] = retry_descriptions(conn, cfg, judge, log)
             summary["ai_usage"] = judge.usage
             conn.commit()
 

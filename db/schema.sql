@@ -109,3 +109,7 @@ do $$ begin
 end $$;
 
 alter table postings add column if not exists places text[];
+
+-- Times the description was re-tried after the first read failed (a site
+-- outage, say); see pipeline.retry_descriptions.
+alter table postings add column if not exists describe_retries smallint not null default 0;
