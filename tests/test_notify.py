@@ -12,7 +12,7 @@ def test_single_role():
     [n] = notify.build([p(1, "Stripe", "SWE Intern")], "https://dash.example", "s3cret")
     assert n["title"] == "Stripe - SWE Intern"
     assert n["message"].startswith("https://x/1\n(Austin, TX)")
-    assert n["click"] == "https://x/1"
+    assert "click" not in n   # tapping opens the ntfy app
     labels = [a["label"] for a in n["actions"]]
     assert labels == ["Not interested: role", "Not interested: company"]
     assert "ids=1&kind=role&sig=" in n["actions"][0]["url"]
@@ -23,7 +23,6 @@ def test_same_role_several_locations():
                         p(2, "Lockheed", "Embedded Intern", "Denver, CO")])
     assert n["title"] == "Lockheed - Embedded Intern"
     assert "https://x/1\n(Austin, TX)\n\nhttps://x/2\n(Denver, CO)" in n["message"]
-    assert n["click"] is None
 
 
 def test_company_with_two_roles():

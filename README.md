@@ -49,7 +49,7 @@ Company sites ─────┘   (US, term,                (job-site APIs)    
    example, Summer 2027 roles only count at Tier 1 and Tier 2 companies).
 6. **Notify.** Each match becomes an ntfy notification titled
    "Company - Role", with the apply link and location. Tapping it opens the
-   posting; the **Not interested: role** and **Not interested: company** buttons
+   ntfy app, where the link opens the posting; the **Not interested: role** and **Not interested: company** buttons
    record feedback the AI sees on later runs.
 7. **Coverage.** For postings found on company sites, the tracker records
    whether Simplify also listed them and how many hours later, so you can see
@@ -95,7 +95,8 @@ fills the dashboard, but nothing is pushed to your phone.
 
 ## Daily use
 
-- **Phone:** tap a notification to open the posting. If it's wrong, tap
+- **Phone:** tap a notification to open it in ntfy, then the link to open the
+  posting. If it's wrong, tap
   **Not interested: role** or **Not interested: company**.
 - **Dashboard:** *Matches*, *Maybe* and *Skipped by AI* are the AI's inbox;
   work through them and each posting lands in one of three places:

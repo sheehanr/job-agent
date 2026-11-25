@@ -78,9 +78,8 @@ def build(postings, dashboard_url="", secret=""):
                     blocks.append(f"{title}: {p['url']}\n{_location_line(p)}")
             ids = [p["id"] for p in items]
             note = {"title": f"{company} - {len(roles)} new roles",
-                    "message": "\n\n".join(blocks), "ids": ids, "click": None, "actions": []}
+                    "message": "\n\n".join(blocks), "ids": ids, "actions": []}
             if dashboard_url and secret:
-                note["click"] = f"{dashboard_url.rstrip('/')}/?company={requests.utils.quote(company)}"
                 note["actions"] = [_feedback_action("Not interested: company", ids, "company",
                                                     dashboard_url, secret)]
             notes.append(note)
@@ -91,8 +90,10 @@ def build(postings, dashboard_url="", secret=""):
             extras = _extras(ps[0])
             message = "\n\n".join(blocks + (["\n".join(extras)] if extras else []))
             ids = [p["id"] for p in ps]
+            # No click link: tapping opens the ntfy app; the posting's link
+            # is in the message.
             note = {"title": f"{company} - {title}", "message": message, "ids": ids,
-                    "click": ps[0]["url"] if len(ps) == 1 else None, "actions": []}
+                    "actions": []}
             if dashboard_url and secret:
                 note["actions"] = [
                     _feedback_action("Not interested: role", ids, "role", dashboard_url, secret),
@@ -138,8 +139,6 @@ def send(note):
     for i, part in enumerate(parts, 1):
         body = {"topic": topic, "message": part,
                 "title": note["title"] + (f" ({i}/{len(parts)})" if len(parts) > 1 else "")}
-        if note.get("click"):
-            body["click"] = note["click"]
         if note.get("actions") and i == len(parts):
             body["actions"] = note["actions"]
         try:
